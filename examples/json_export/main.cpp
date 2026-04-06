@@ -42,7 +42,6 @@ int main(int argc, char* argv[]) {
     // 3. Configure JSON output (pretty-print with enum names)
     google::protobuf::util::JsonPrintOptions opts;
     opts.add_whitespace = true;
-    opts.always_print_fields_with_no_presence = false;
 
     // 4. Serialize to JSON
     string json;
