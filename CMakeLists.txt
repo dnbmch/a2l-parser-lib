@@ -22,6 +22,7 @@ if(NOT A2L_LIB_DIR)
     set(A2L_LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/lib" CACHE PATH
         "Directory containing prebuilt liba2lextract.a and generated .pb.h files")
 endif()
+get_filename_component(A2L_LIB_DIR "${A2L_LIB_DIR}" ABSOLUTE BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 
 add_library(a2lextract STATIC IMPORTED GLOBAL)
 set_target_properties(a2lextract PROPERTIES
