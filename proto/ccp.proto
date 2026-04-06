@@ -1,0 +1,252 @@
+// CCP protocol extension for live measurement interpretation.
+// Hand-authored from ASAM CCP V2.1 spec corpus and IF_DATA ASAP1B_CCP spec card.
+//
+// Copyright: Balint Kurucz - Danube Mechatronics Kft.
+// License: Dual (GPL or Commercial) - see License.md
+
+syntax = "proto3";
+
+package a2l.v1;
+
+import "common.proto";
+
+// ===========================================================================
+// CCP-specific enums.
+// ===========================================================================
+
+// DAQ mode for CCP transport blob.
+// Source: docs/spec_corpus/spec_cards/if_data_ccp.md (tp_blob.daq_mode)
+//         docs/spec_corpus/examples/if_data_ccp_fixed_daq_minimal.a2l
+enum CcpDaqMode {
+  CCP_DAQ_MODE_UNSPECIFIED = 0;
+  CCP_DAQ_MODE_ALTERNATING = 1;
+  CCP_DAQ_MODE_BURST       = 2;
+}
+
+// Consistency mode for CCP transport blob.
+// Source: docs/spec_corpus/spec_cards/if_data_ccp.md (tp_blob.consistency)
+//         docs/spec_corpus/examples/if_data_ccp_fixed_daq_minimal.a2l
+enum CcpConsistency {
+  CCP_CONSISTENCY_UNSPECIFIED = 0;
+  CCP_CONSISTENCY_DAQ         = 1;
+  CCP_CONSISTENCY_ODT         = 2;
+}
+
+// CAN-ID mode for QP_BLOB inside SOURCE.
+// Source: docs/spec_corpus/spec_cards/if_data_ccp.md
+//         docs/spec_corpus/normalized/if_data_ccp.md
+//         docs/spec_corpus/examples/if_data_ccp_variable_id_event_group_synthetic.a2l
+// Note: CAN_ID_VARIABLE is spec-backed and synthetic-example-backed only.
+enum CcpCanIdMode {
+  CCP_CAN_ID_MODE_UNSPECIFIED = 0;
+  CCP_CAN_ID_MODE_FIXED       = 1;
+  CCP_CAN_ID_MODE_VARIABLE    = 2;
+}
+
+// Memory type for DEFINED_PAGES.
+// Source: docs/spec_corpus/examples/if_data_ccp_fixed_daq_minimal.a2l
+enum CcpPageMemoryType {
+  CCP_PAGE_MEMORY_TYPE_UNSPECIFIED = 0;
+  CCP_PAGE_MEMORY_TYPE_ROM         = 1;
+  CCP_PAGE_MEMORY_TYPE_RAM         = 2;
+  CCP_PAGE_MEMORY_TYPE_FLASH       = 3;
+  CCP_PAGE_MEMORY_TYPE_EEPROM      = 4;
+}
+
+// Address extension mode for CCP DAQ packing.
+// Source: docs/spec_corpus/raw/ccp_v2_6_aml/ccp_v2_6.aml
+enum CcpAddressExtensionMode {
+  CCP_ADDRESS_EXTENSION_MODE_UNSPECIFIED = 0;
+  CCP_ADDRESS_EXTENSION_MODE_DAQ         = 1;
+  CCP_ADDRESS_EXTENSION_MODE_ODT         = 2;
+}
+
+// CAN synchronization edge.
+// Source: docs/spec_corpus/raw/ccp_v2_6_aml/ccp_v2_6.aml
+enum CcpSyncEdge {
+  CCP_SYNC_EDGE_UNSPECIFIED = 0;
+  CCP_SYNC_EDGE_SINGLE      = 1;
+  CCP_SYNC_EDGE_DUAL        = 2;
+}
+
+// Autostart behavior for CCP page-switch tables.
+// Source: docs/spec_corpus/raw/ccp_v2_6_aml/ccp_v2_6.aml
+enum CcpAutostartBehavior {
+  CCP_AUTOSTART_BEHAVIOR_UNSPECIFIED = 0;
+  CCP_AUTOSTART_BEHAVIOR_LAST_ACTIVE_PAGE = 1;
+  CCP_AUTOSTART_BEHAVIOR_ALWAYS_WP        = 2;
+  CCP_AUTOSTART_BEHAVIOR_ALWAYS_RP        = 3;
+}
+
+// ===========================================================================
+// IF_DATA ASAP1B_CCP top-level container.
+// Source: docs/spec_corpus/spec_cards/if_data_ccp.md
+//         docs/spec_corpus/normalized/if_data_ccp.md
+// ===========================================================================
+message IfDataCcp {
+  // Typed live-data core.
+  optional CcpTpBlob tp_blob = 1;
+
+  repeated CcpSource     sources      = 5;
+  repeated CcpRaster     rasters      = 6;
+  repeated CcpEventGroup event_groups = 7;
+
+  // Measurement-level KP_BLOB (inline).
+  optional CcpKpBlob kp_blob = 10;
+
+  // Raw fallback for deferred blocks.
+  optional string seed_key_raw    = 20;
+  optional string checksum_raw    = 21;
+  optional string dp_blob_raw     = 22;
+  optional string addr_mapping_raw = 23;
+
+  // Catch-all for unsupported vendor extensions.
+  repeated string raw_blocks = 30;
+}
+
+// ===========================================================================
+// TP_BLOB - CCP core transport description.
+// Source: docs/spec_corpus/spec_cards/if_data_ccp.md
+//         docs/spec_corpus/examples/if_data_ccp_fixed_daq_minimal.a2l
+// ===========================================================================
+message CcpTpBlob {
+  // Required ordered fields.
+  uint32    ccp_version     = 1;   // e.g. 0x0201
+  uint32    blob_version    = 2;   // e.g. 0x0204
+  uint32    crm_can_id      = 3;   // CRM (command response) CAN ID
+  uint32    dto_can_id      = 4;   // DTO (data transfer object) CAN ID
+  uint32    station_address = 5;
+  ByteOrder byte_order      = 6;
+
+  // CAN bus parameters.
+  optional uint32 baudrate     = 10;
+  optional uint32 sample_point = 11;
+  optional uint32 sample_rate  = 12;
+  optional uint32 btl_cycles   = 13;
+  optional uint32 sjw          = 14;
+  optional CcpSyncEdge sync_edge = 15;
+
+  // DAQ behavior.
+  optional CcpDaqMode     daq_mode     = 20;
+  optional CcpConsistency consistency  = 21;
+  optional CcpAddressExtensionMode address_extension = 22;
+
+  // Optional commands (raw command codes).
+  repeated uint32 optional_cmds = 25;
+
+  // Page management.
+  repeated CcpDefinedPage defined_pages = 30;
+  optional CcpPageSwitchMethod page_switch_method = 31;
+}
+
+// ===========================================================================
+// DEFINED_PAGES - CCP calibration page descriptor.
+// Source: docs/spec_corpus/examples/if_data_ccp_fixed_daq_minimal.a2l
+// ===========================================================================
+message CcpDefinedPage {
+  uint32             page_number     = 1;
+  string             name            = 2;
+  uint32             address_extension = 3;
+  uint64             address         = 4;
+  uint64             size            = 5;
+  CcpPageMemoryType  memory_type     = 6;
+  optional bool      ram_init_by_ecu = 7;
+  optional bool      ram_init_by_tool = 8;
+  optional bool      auto_flash_back = 9;
+  optional bool      flash_back      = 10;
+  optional bool      default_page    = 11;
+}
+
+message CcpPageSwitchMethod {
+  uint32 version = 1;
+  optional CcpMailbox mailbox = 2;
+  optional CcpAutostartBehavior autostart_behavior = 3;
+
+  // Preserve less-common OCT-style tables until they are modeled explicitly.
+  repeated string raw_tables = 10;
+}
+
+message CcpMailbox {
+  uint32 mailbox_version    = 1;
+  uint32 page_setup_time_ms = 2;
+  uint64 start_address      = 3;
+}
+
+// ===========================================================================
+// SOURCE - CCP DAQ list descriptor.
+// Source: docs/spec_corpus/spec_cards/if_data_ccp.md
+//         docs/spec_corpus/normalized/if_data_ccp.md
+//         docs/spec_corpus/examples/if_data_ccp_fixed_daq_minimal.a2l
+// ===========================================================================
+message CcpSource {
+  // Required ordered fields.
+  string name             = 1;   // long description
+  uint32 scaling_unit     = 2;   // SI unit index
+  uint32 rate             = 3;   // prescaler / rate divider
+
+  // QP_BLOB — DAQ list binding.
+  optional CcpQpBlob qp_blob = 10;
+}
+
+// ===========================================================================
+// QP_BLOB - CCP DAQ-list-to-transport binding.
+// Source: docs/spec_corpus/spec_cards/if_data_ccp.md
+//         docs/spec_corpus/examples/if_data_ccp_fixed_daq_minimal.a2l
+//         docs/spec_corpus/examples/if_data_ccp_variable_id_event_group_synthetic.a2l
+// ===========================================================================
+message CcpQpBlob {
+  uint32 daq_list_number = 1;
+  uint32 length          = 2;   // ODT entry length
+
+  // CAN ID mode.
+  CcpCanIdMode can_id_mode = 5;
+  optional uint32 fixed_can_id = 6;  // present when mode is FIXED
+
+  // First PID for this DAQ list.
+  optional uint32 first_pid = 10;
+
+  // Raster bindings (indexes into the raster list).
+  repeated uint32 raster_ids = 15;
+
+  // Flags.
+  optional bool reduction_allowed = 20;
+}
+
+// ===========================================================================
+// RASTER - CCP event channel descriptor.
+// Source: docs/spec_corpus/spec_cards/if_data_ccp.md
+//         docs/spec_corpus/examples/if_data_ccp_fixed_daq_minimal.a2l
+// ===========================================================================
+message CcpRaster {
+  string name       = 1;   // long description
+  string short_name = 2;
+  uint32 raster_id  = 3;   // event channel number
+  uint32 scaling_unit = 4;
+  uint32 rate        = 5;   // prescaler / rate divider
+}
+
+// ===========================================================================
+// EVENT_GROUP - CCP combined event-channel grouping.
+// Source: docs/spec_corpus/spec_cards/if_data_ccp.md
+//         docs/spec_corpus/examples/if_data_ccp_variable_id_event_group_synthetic.a2l
+// Note: spec-backed and synthetic-example-backed only; no real local sample.
+// ===========================================================================
+message CcpEventGroup {
+  string name       = 1;
+  string short_name = 2;
+
+  // Raster IDs that belong to this group.
+  repeated uint32 raster_ids = 5;
+}
+
+// ===========================================================================
+// KP_BLOB - measurement-level online placement descriptor.
+// Source: docs/spec_corpus/spec_cards/if_data_ccp.md
+//         docs/spec_corpus/examples/if_data_ccp_kp_dp_blob_minimal.a2l
+// ===========================================================================
+message CcpKpBlob {
+  uint32 address_extension = 1;
+  uint64 address           = 2;
+  uint32 size              = 3;
+  repeated uint32 raster_ids = 4;
+}

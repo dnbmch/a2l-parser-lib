@@ -1,0 +1,35 @@
+// Axis-related helper messages reusable by AXIS_PTS, CHARACTERISTIC, and MEASUREMENT.
+// Hand-authored from ASAM MCD-2 MC V1.7.1 spec corpus.
+//
+// Copyright: Balint Kurucz - Danube Mechatronics Kft.
+// License: Dual (GPL or Commercial) - see License.md
+
+syntax = "proto3";
+
+package a2l.v1;
+
+// ===========================================================================
+// Reusable helper messages.
+// These are shared across AXIS_PTS, CHARACTERISTIC, and MEASUREMENT.
+// ===========================================================================
+
+// Extended plausible range for power-user calibration.
+// Source: ASAP2 1.7.1 page 122 (EXTENDED_LIMITS)
+message ExtendedLimits {
+  double lower_limit = 1;
+  double upper_limit = 2;
+}
+
+// Maximum adaptive refresh rate in the ECU.
+// Source: ASAP2 1.7.1 page 162 (MAX_REFRESH)
+message MaxRefresh {
+  uint32 scaling_unit = 1;  // SI unit index (see Appendix C)
+  uint32 rate         = 2;
+}
+
+// Link to a symbol in a linker map file.
+// Source: ASAP2 1.7.1 SYMBOL_LINK keyword
+message SymbolLink {
+  string symbol_name = 1;
+  int32  bit_offset  = 2;
+}

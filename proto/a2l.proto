@@ -1,0 +1,604 @@
+// Phase-1 ASAP2 messages for live signal interpretation.
+// Hand-authored from ASAM MCD-2 MC V1.7.1 spec corpus.
+//
+// Copyright: Balint Kurucz - Danube Mechatronics Kft.
+// License: Dual (GPL or Commercial) - see License.md
+
+syntax = "proto3";
+
+package a2l.v1;
+
+import "axis.proto";
+import "ccp.proto";
+import "common.proto";
+import "record_layout.proto";
+import "xcp.proto";
+
+// ===========================================================================
+// Top-level file container.
+// ===========================================================================
+message A2lFile {
+  repeated Module modules = 1;
+
+  optional uint32 asap2_version_major = 5;
+  optional uint32 asap2_version_minor = 6;
+}
+
+// ===========================================================================
+// MODULE - top-level device container.
+// Source: docs/spec_corpus/spec_cards/module.md
+// ===========================================================================
+message Module {
+  string name            = 1;
+  string long_identifier = 2;
+
+  // Module defaults.
+  ModCommon mod_common = 3;
+
+  // Module parameters (contains MEMORY_SEGMENT).
+  ModPar mod_par = 4;
+
+  // Child collections.
+  repeated Measurement      measurements       = 10;
+  repeated Characteristic   characteristics     = 11;
+  repeated CompuMethod      compu_methods       = 12;
+  repeated CompuTab         compu_tabs          = 13;
+  repeated CompuVtab        compu_vtabs         = 14;
+  repeated CompuVtabRange   compu_vtab_ranges   = 15;
+  repeated RecordLayout     record_layouts      = 16;
+  repeated Unit             units               = 17;
+  repeated AxisPts          axis_points         = 18;
+
+  // Module-level IF_DATA payloads.
+  repeated IfData if_datas = 20;
+
+  // Functional organization.
+  repeated Function          functions           = 25;
+  repeated Group             groups              = 26;
+
+  // Type definitions (V1.7+).
+  repeated TypedefCharacteristic typedef_characteristics = 30;
+  repeated TypedefStructure      typedef_structures      = 31;
+  repeated TypedefAxis           typedef_axes            = 32;
+  repeated Instance              instances               = 33;
+
+  // Variant coding.
+  optional VariantCoding variant_coding = 35;
+
+  // Raw A2ML text (preserve for IF_DATA schema resolution).
+  optional string a2ml_raw = 50;
+}
+
+// ===========================================================================
+// MOD_COMMON - module-wide defaults.
+// Source: docs/spec_corpus/spec_cards/mod_common.md
+// ===========================================================================
+message ModCommon {
+  optional ByteOrder    byte_order      = 1;
+  optional uint32       data_size_bits  = 2;
+  optional DepositMode  deposit_mode    = 3;
+
+  // Alignment defaults (bytes). Keys: FLOAT16, FLOAT32, FLOAT64,
+  // BYTE, WORD, LONG, INT64.
+  map<string, uint32> alignments = 10;
+}
+
+// ===========================================================================
+// MOD_PAR - module parameters.
+// Source: docs/spec_corpus/spec_cards/mod_par.md
+// ===========================================================================
+message ModPar {
+  string comment = 1;
+
+  optional string ecu          = 2;
+  optional string version      = 3;
+  optional string supplier     = 4;
+  optional string cpu_type     = 5;
+  optional int64  ecu_calibration_offset = 6;
+
+  repeated SystemConstant  system_constants = 10;
+  repeated MemorySegment   memory_segments  = 11;
+}
+
+message SystemConstant {
+  string name  = 1;
+  string value = 2;
+}
+
+// ===========================================================================
+// MEASUREMENT - runtime signal / variable.
+// Source: docs/spec_corpus/spec_cards/measurement.md
+// ===========================================================================
+message Measurement {
+  // Required ordered fields.
+  string   name            = 1;
+  string   long_identifier = 2;
+  DataType datatype        = 3;
+  string   conversion      = 4;  // COMPU_METHOD reference (or "NO_COMPU_METHOD")
+  uint32   resolution      = 5;
+  double   accuracy        = 6;
+  double   lower_limit     = 7;
+  double   upper_limit     = 8;
+
+  // Phase-1 typed optional fields.
+  optional uint64       ecu_address           = 10;
+  optional uint32       ecu_address_extension = 11;
+  optional ByteOrder    byte_order            = 12;
+  optional uint64       bit_mask              = 13;
+  optional BitOperation bit_operation         = 14;
+  optional uint64       error_mask            = 15;
+  optional uint32       array_size            = 16;
+  repeated uint32       matrix_dim            = 17;
+  optional MatrixLayout layout                = 18;
+  optional bool         discrete              = 19;
+  optional string       format                = 20;
+  optional string       phys_unit             = 21;
+
+  // Measurement-level IF_DATA (for example XCP DAQ binding or CCP KP_BLOB).
+  repeated IfData if_datas = 30;
+}
+
+message BitOperation {
+  optional uint32 left_shift  = 1;
+  optional uint32 right_shift = 2;
+  optional bool   sign_extend = 3;
+}
+
+// ===========================================================================
+// CHARACTERISTIC - calibration parameter.
+// Source: docs/spec_corpus/spec_cards/characteristic.md
+// ===========================================================================
+message Characteristic {
+  // Required ordered fields.
+  string             name               = 1;
+  string             long_identifier    = 2;
+  CharacteristicType type               = 3;
+  uint64             address            = 4;
+  string             record_layout_ref  = 5;
+  double             max_diff           = 6;
+  string             conversion         = 7;  // COMPU_METHOD reference
+  double             lower_limit        = 8;
+  double             upper_limit        = 9;
+
+  // Phase-1 typed optional fields.
+  repeated AxisDescr axis_descrs              = 10;  // order is semantic
+  optional ByteOrder byte_order               = 11;
+  optional uint64    bit_mask                 = 12;
+  repeated uint32    matrix_dim               = 13;
+  optional uint32    number                   = 14;
+  optional string    format                   = 15;
+  optional string    phys_unit                = 16;
+  optional uint32    ecu_address_extension    = 17;
+
+  // Characteristic-level IF_DATA.
+  repeated IfData if_datas = 30;
+}
+
+// ===========================================================================
+// AXIS_DESCR - axis description nested inside CHARACTERISTIC.
+// Source: docs/spec_corpus/spec_cards/axis_descr.md
+// ===========================================================================
+message AxisDescr {
+  // Required ordered fields.
+  AxisAttribute attribute        = 1;
+  string        input_quantity   = 2;  // measurement ref or "NO_INPUT_QUANTITY"
+  string        conversion       = 3;  // compu_method ref or "NO_COMPU_METHOD"
+  uint32        max_axis_points  = 4;
+  double        lower_limit      = 5;
+  double        upper_limit      = 6;
+
+  // Phase-1 typed optional fields.
+  optional string    axis_pts_ref    = 10;
+  optional string    curve_axis_ref  = 11;
+  optional ByteOrder byte_order      = 12;
+  optional Monotony  monotony        = 14;
+  optional string    format          = 15;
+  optional string    phys_unit       = 16;
+  optional bool      read_only       = 17;
+  optional double    step_size       = 18;
+  optional double    max_grad        = 19;
+
+  // Fixed-axis strategies (mutually exclusive).
+  optional FixAxisPar     fix_axis_par      = 20;
+  optional FixAxisParDist fix_axis_par_dist = 21;
+  repeated double         fix_axis_par_list = 22;
+}
+
+message FixAxisPar {
+  int64  offset    = 1;
+  int64  shift     = 2;
+  uint32 numberapo = 3;
+}
+
+message FixAxisParDist {
+  int64  offset    = 1;
+  int64  distance  = 2;
+  uint32 numberapo = 3;
+}
+
+// ===========================================================================
+// COMPU_METHOD - value conversion.
+// Source: docs/spec_corpus/spec_cards/compu_method.md
+// ===========================================================================
+message CompuMethod {
+  // Required ordered fields.
+  string         name            = 1;
+  string         long_identifier = 2;
+  ConversionType conversion_type = 3;
+  string         format          = 4;
+  string         unit            = 5;  // inline unit string
+
+  // Phase-1 typed optional fields.
+  optional Coeffs       coeffs           = 10;  // RAT_FUNC
+  optional CoeffsLinear coeffs_linear    = 11;  // LINEAR
+  optional string       compu_tab_ref    = 12;  // TAB_INTP / TAB_NOINTP / TAB_VERB
+  optional string       ref_unit         = 13;  // UNIT object reference
+  optional string       status_string_ref = 14; // COMPU_VTAB / COMPU_VTAB_RANGE ref
+
+  // Formula preserved as raw string (deferred typed model).
+  optional string formula_raw = 20;
+}
+
+// RAT_FUNC coefficients: phys = f(int) = (a*x^2 + b*x + c) / (d*x^2 + e*x + f)
+message Coeffs {
+  double a = 1;
+  double b = 2;
+  double c = 3;
+  double d = 4;
+  double e = 5;
+  double f = 6;
+}
+
+// LINEAR coefficients: phys = a*int + b
+message CoeffsLinear {
+  double a = 1;
+  double b = 2;
+}
+
+// ===========================================================================
+// COMPU_TAB - numeric lookup table.
+// Source: docs/spec_corpus/spec_cards/compu_tab.md
+// ===========================================================================
+message CompuTab {
+  string         name            = 1;
+  ConversionType conversion_type = 2;  // TAB_INTP or TAB_NOINTP only
+
+  repeated CompuTabPair pairs = 5;
+
+  optional string default_value         = 10;
+  optional double default_value_numeric = 11;
+}
+
+message CompuTabPair {
+  double in_val  = 1;
+  double out_val = 2;
+}
+
+// ===========================================================================
+// COMPU_VTAB - verbal/enumeration table.
+// Source: docs/spec_corpus/spec_cards/compu_vtab.md
+// ===========================================================================
+message CompuVtab {
+  string name = 1;
+
+  repeated CompuVtabPair pairs = 5;
+
+  optional string default_value = 10;
+}
+
+message CompuVtabPair {
+  double in_val    = 1;
+  string out_val   = 2;
+}
+
+// ===========================================================================
+// COMPU_VTAB_RANGE - range-based verbal table.
+// Source: docs/spec_corpus/spec_cards/compu_vtab_range.md
+// ===========================================================================
+message CompuVtabRange {
+  string name = 1;
+
+  repeated CompuVtabRangeTriple triples = 5;
+
+  optional string default_value = 10;
+}
+
+message CompuVtabRangeTriple {
+  double in_val_min = 1;
+  double in_val_max = 2;
+  string out_val    = 3;
+}
+
+// ===========================================================================
+// UNIT - reusable physical unit.
+// Source: docs/spec_corpus/spec_cards/unit.md
+// ===========================================================================
+message Unit {
+  string   name            = 1;
+  string   long_identifier = 2;
+  string   display         = 3;
+  UnitType type            = 4;
+
+  optional string ref_unit = 10;
+
+  // SI exponents: length, mass, time, electric_current,
+  // temperature, amount_of_substance, luminous_intensity.
+  repeated int32 si_exponents = 11;
+
+  // Linear conversion from ref_unit to this unit.
+  optional double unit_conversion_gradient = 12;
+  optional double unit_conversion_offset   = 13;
+}
+
+// ===========================================================================
+// MEMORY_SEGMENT - memory region descriptor.
+// Source: docs/spec_corpus/spec_cards/memory_segment.md
+// ===========================================================================
+message MemorySegment {
+  string          name            = 1;
+  string          long_identifier = 2;
+  MemoryPrgType   prg_type        = 3;
+  MemoryType      memory_type     = 4;
+  MemoryAttribute attribute       = 5;
+  uint64          address         = 6;
+  uint64          size            = 7;
+  repeated int64  offsets         = 8;  // five offset values per spec
+
+  // Segment-level IF_DATA.
+  repeated IfData if_datas = 20;
+}
+
+// ===========================================================================
+// AXIS_PTS - standalone axis points distribution.
+// Source: docs/spec_corpus/spec_cards/axis_pts.md
+//         docs/spec_corpus/normalized/axis_pts.md
+//
+// Referenced by AXIS_DESCR via axis_pts_ref (COM_AXIS, RES_AXIS) or
+// indirectly through CURVE_AXIS. Structurally parallels CHARACTERISTIC
+// in its required field shape.
+// ===========================================================================
+message AxisPts {
+  // Required ordered fields.
+  string name               = 1;
+  string long_identifier    = 2;
+  uint64 address            = 3;
+  string input_quantity_ref = 4;   // MEASUREMENT ref or "NO_INPUT_QUANTITY"
+  string record_layout_ref  = 5;   // RECORD_LAYOUT ref (spec field "Deposit")
+  double max_diff           = 6;
+  string conversion_ref     = 7;   // COMPU_METHOD ref or "NO_COMPU_METHOD"
+  uint32 max_axis_points    = 8;
+  double lower_limit        = 9;
+  double upper_limit        = 10;
+
+  // High-value optional fields.
+  optional ByteOrder          byte_order            = 20;
+  optional CalibrationAccess  calibration_access    = 21;
+  optional DepositMode        deposit_mode          = 22;  // DEPOSIT keyword (absolute/difference)
+  optional uint32             ecu_address_extension = 23;
+  optional ExtendedLimits     extended_limits       = 24;
+  optional string             format                = 25;
+  optional bool               guard_rails           = 26;
+  optional Monotony           monotony              = 27;
+  optional string             phys_unit             = 28;
+  optional bool               read_only             = 29;
+  optional double             step_size             = 30;
+  optional string             ref_memory_segment    = 31;  // deprecated but accepted
+  optional string             display_identifier    = 32;
+  optional SymbolLink         symbol_link           = 33;
+  optional string             model_link            = 34;
+  optional MaxRefresh         max_refresh           = 35;
+
+  // AXIS_PTS-level IF_DATA (XCP/CCP interface data).
+  repeated IfData if_datas = 40;
+
+  // Deferred: annotation, function_list.
+}
+
+// ===========================================================================
+// IF_DATA - protocol interface data container.
+// Routes to typed XCP, typed CCP, or raw fallback.
+// Source: docs/spec_corpus/spec_cards/if_data_xcp.md
+//         docs/spec_corpus/spec_cards/if_data_ccp.md
+//         docs/spec_corpus/spec_cards/if_data_mixed_families.md
+// ===========================================================================
+message IfData {
+  // Interface family name (e.g. "XCP", "XCPplus", "ASAP1B_CCP").
+  string interface_name = 1;
+
+  oneof payload {
+    // Typed XCP payload.
+    IfDataXcp xcp = 10;
+
+    // Typed CCP payload.
+    IfDataCcp ccp = 11;
+
+    // Raw fallback for unsupported families (ETK, KWP2000, VISION, etc.).
+    string raw_payload = 20;
+  }
+}
+
+// ===========================================================================
+// VARIANT_CODING - ECU variant management.
+// Source: ASAM MCD-2 MC V1.7.1 Section 5.3.9
+// ===========================================================================
+message VariantCoding {
+  optional string    var_separator = 1;
+  optional VarNaming var_naming    = 2;
+
+  repeated VarCharacteristic   var_characteristics   = 5;
+  repeated VarCriterion        var_criteria           = 6;
+  repeated VarForbiddenComb    var_forbidden_combs    = 7;
+}
+
+// VAR_CHARACTERISTIC - characteristic variant with address list.
+message VarCharacteristic {
+  string          name              = 1;
+  repeated string criterion_values  = 2;
+  repeated uint64 var_address       = 5;
+}
+
+// VAR_CRITERION - selection criterion for variant coding.
+message VarCriterion {
+  string          name            = 1;
+  string          long_identifier = 2;
+  repeated string values          = 3;
+
+  optional string var_measurement                = 5;
+  optional string var_selection_characteristic    = 6;
+}
+
+// VAR_FORBIDDEN_COMB - forbidden combination of criterion/value pairs.
+message VarForbiddenComb {
+  repeated VarCriterionValuePair pairs = 1;
+}
+
+message VarCriterionValuePair {
+  string criterion_name  = 1;
+  string criterion_value = 2;
+}
+
+// ===========================================================================
+// FUNCTION - callable function definition grouping measurements/characteristics.
+// Source: ASAM MCD-2 MC V1.7.1 Section 5.3.4
+// ===========================================================================
+message Function {
+  string name            = 1;
+  string long_identifier = 2;
+
+  // Referenced objects.
+  repeated string def_characteristics         = 5;
+  repeated string ref_characteristics         = 6;
+  repeated string in_measurements             = 7;
+  repeated string out_measurements            = 8;
+  repeated string loc_measurements            = 9;
+
+  // Sub-functions.
+  repeated string sub_functions = 10;
+
+  // Function version.
+  optional string function_version = 15;
+
+  // Annotations.
+  repeated Annotation annotations = 20;
+}
+
+// ===========================================================================
+// GROUP - signal/parameter grouping for calibration tools.
+// Source: ASAM MCD-2 MC V1.7.1 Section 5.3.5
+// ===========================================================================
+message Group {
+  string name            = 1;
+  string long_identifier = 2;
+
+  // Root flag (top-level display group).
+  optional bool root = 3;
+
+  // Referenced objects.
+  repeated string ref_characteristics = 5;
+  repeated string ref_measurements    = 6;
+
+  // Sub-groups.
+  repeated string sub_groups = 10;
+
+  // Function list.
+  repeated string function_list = 15;
+
+  // Annotations.
+  repeated Annotation annotations = 20;
+}
+
+// ===========================================================================
+// Annotation - documentation attached to objects.
+// Source: ASAM MCD-2 MC V1.7.1 Section 5.3.2
+// ===========================================================================
+message Annotation {
+  optional string label  = 1;
+  optional string origin = 2;
+  repeated string text   = 3;
+}
+
+// ===========================================================================
+// TYPEDEF_CHARACTERISTIC - reusable characteristic type definition (V1.7+).
+// Source: ASAM MCD-2 MC V1.7.1 Section 5.3.7
+// ===========================================================================
+message TypedefCharacteristic {
+  string             name              = 1;
+  string             long_identifier   = 2;
+  CharacteristicType type              = 3;
+  string             record_layout_ref = 4;
+  double             max_diff          = 5;
+  string             conversion        = 6;
+  double             lower_limit       = 7;
+  double             upper_limit       = 8;
+
+  // Axis descriptions (order is semantic: X, Y, Z, ...).
+  repeated AxisDescr axis_descrs = 10;
+
+  optional ExtendedLimits extended_limits = 15;
+  optional string         format          = 16;
+  optional string         phys_unit       = 17;
+}
+
+// ===========================================================================
+// TYPEDEF_STRUCTURE - reusable structure type definition (V1.7+).
+// Source: ASAM MCD-2 MC V1.7.1 Section 5.3.7
+// ===========================================================================
+message TypedefStructure {
+  string name            = 1;
+  string long_identifier = 2;
+  uint64 total_size      = 3;
+
+  repeated StructureComponent components = 5;
+}
+
+message StructureComponent {
+  string name       = 1;
+  string type_ref   = 2;  // Reference to TYPEDEF_* name
+  uint64 offset     = 3;  // Byte offset within structure
+
+  optional uint32 matrix_dim  = 5;
+  optional string symbol_link = 6;
+}
+
+// ===========================================================================
+// TYPEDEF_AXIS - reusable axis type definition (V1.7+).
+// Source: ASAM MCD-2 MC V1.7.1 Section 5.3.7
+// ===========================================================================
+message TypedefAxis {
+  string         name              = 1;
+  string         long_identifier   = 2;
+  string         input_quantity    = 3;
+  string         record_layout_ref = 4;
+  double         max_diff          = 5;
+  string         conversion        = 6;
+  uint32         max_axis_points   = 7;
+  double         lower_limit       = 8;
+  double         upper_limit       = 9;
+
+  optional ByteOrder      byte_order  = 10;
+  optional Monotony        monotony    = 11;
+  optional DepositMode     deposit     = 12;
+  optional ExtendedLimits  extended_limits = 13;
+  optional string          format      = 14;
+  optional string          phys_unit   = 15;
+}
+
+// ===========================================================================
+// INSTANCE - typed object instantiation (V1.7+).
+// Source: ASAM MCD-2 MC V1.7.1 Section 5.3.7
+// ===========================================================================
+message Instance {
+  string name            = 1;
+  string long_identifier = 2;
+  string type_ref        = 3;  // Reference to TYPEDEF_* name
+  uint64 address         = 4;
+
+  optional string   display_identifier     = 10;
+  repeated uint32   matrix_dim             = 11;
+  optional uint32   ecu_address_extension  = 12;
+  optional bool     read_only              = 13;
+  optional SymbolLink symbol_link          = 14;
+  optional string   model_link             = 15;
+
+  repeated IfData if_datas = 20;
+}

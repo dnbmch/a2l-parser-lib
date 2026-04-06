@@ -1,0 +1,181 @@
+// Typed RECORD_LAYOUT contract for calibration and axis decoding.
+// Hand-authored from ASAM MCD-2 MC V1.7.1 RECORD_LAYOUT corpus.
+//
+// Copyright: Balint Kurucz - Danube Mechatronics Kft.
+// License: Dual (GPL or Commercial) - see License.md
+
+syntax = "proto3";
+
+package a2l.v1;
+
+import "common.proto";
+
+// ===========================================================================
+// RECORD_LAYOUT-specific enums.
+// ===========================================================================
+
+// Record-layout axis label.
+// W is used only for RIP_ADDR_W.
+enum RecordLayoutAxis {
+  RECORD_LAYOUT_AXIS_UNSPECIFIED = 0;
+  RECORD_LAYOUT_AXIS_X           = 1;
+  RECORD_LAYOUT_AXIS_Y           = 2;
+  RECORD_LAYOUT_AXIS_Z           = 3;
+  RECORD_LAYOUT_AXIS_4           = 4;
+  RECORD_LAYOUT_AXIS_5           = 5;
+  RECORD_LAYOUT_AXIS_W           = 6;
+}
+
+// Alignment override type inside RECORD_LAYOUT.
+enum RecordLayoutAlignmentType {
+  RECORD_LAYOUT_ALIGNMENT_TYPE_UNSPECIFIED   = 0;
+  RECORD_LAYOUT_ALIGNMENT_TYPE_BYTE          = 1;
+  RECORD_LAYOUT_ALIGNMENT_TYPE_FLOAT16_IEEE  = 2;
+  RECORD_LAYOUT_ALIGNMENT_TYPE_FLOAT32_IEEE  = 3;
+  RECORD_LAYOUT_ALIGNMENT_TYPE_FLOAT64_IEEE  = 4;
+  RECORD_LAYOUT_ALIGNMENT_TYPE_INT64         = 5;
+  RECORD_LAYOUT_ALIGNMENT_TYPE_LONG          = 6;
+  RECORD_LAYOUT_ALIGNMENT_TYPE_WORD          = 7;
+}
+
+// Address interpretation for deposited values.
+enum RecordLayoutAddressType {
+  RECORD_LAYOUT_ADDRESS_TYPE_UNSPECIFIED = 0;
+  RECORD_LAYOUT_ADDRESS_TYPE_PBYTE       = 1;
+  RECORD_LAYOUT_ADDRESS_TYPE_PWORD       = 2;
+  RECORD_LAYOUT_ADDRESS_TYPE_PLONG       = 3;
+  RECORD_LAYOUT_ADDRESS_TYPE_PLONGLONG   = 4;
+  RECORD_LAYOUT_ADDRESS_TYPE_DIRECT      = 5;
+}
+
+// Function-value ordering in memory.
+enum RecordLayoutIndexMode {
+  RECORD_LAYOUT_INDEX_MODE_UNSPECIFIED      = 0;
+  RECORD_LAYOUT_INDEX_MODE_ALTERNATE_CURVES = 1;
+  RECORD_LAYOUT_INDEX_MODE_ALTERNATE_WITH_X = 2;
+  RECORD_LAYOUT_INDEX_MODE_ALTERNATE_WITH_Y = 3;
+  RECORD_LAYOUT_INDEX_MODE_COLUMN_DIR       = 4;
+  RECORD_LAYOUT_INDEX_MODE_ROW_DIR          = 5;
+}
+
+// Fixed-axis operand selector.
+enum RecordLayoutAxisOperandKind {
+  RECORD_LAYOUT_AXIS_OPERAND_KIND_UNSPECIFIED = 0;
+  RECORD_LAYOUT_AXIS_OPERAND_KIND_DIST_OP     = 1;
+  RECORD_LAYOUT_AXIS_OPERAND_KIND_OFFSET      = 2;
+  RECORD_LAYOUT_AXIS_OPERAND_KIND_SHIFT_OP    = 3;
+}
+
+// Address-reference selector.
+enum RecordLayoutAddressReferenceKind {
+  RECORD_LAYOUT_ADDRESS_REFERENCE_KIND_UNSPECIFIED = 0;
+  RECORD_LAYOUT_ADDRESS_REFERENCE_KIND_RIP_ADDR    = 1;
+  RECORD_LAYOUT_ADDRESS_REFERENCE_KIND_SRC_ADDR    = 2;
+}
+
+// Static layout flags.
+enum RecordLayoutStaticFlag {
+  RECORD_LAYOUT_STATIC_FLAG_UNSPECIFIED             = 0;
+  RECORD_LAYOUT_STATIC_FLAG_STATIC_ADDRESS_OFFSETS  = 1;
+  RECORD_LAYOUT_STATIC_FLAG_STATIC_RECORD_LAYOUT    = 2;
+}
+
+// ===========================================================================
+// RECORD_LAYOUT core.
+// Source: docs/spec_corpus/spec_cards/record_layout.md
+//         docs/spec_corpus/normalized/record_layout.md
+// ===========================================================================
+message RecordLayout {
+  string name = 1;
+
+  // Ordered semantic components. Preserve declaration order.
+  repeated RecordLayoutComponent components = 10;
+}
+
+message RecordLayoutComponent {
+  oneof component {
+    RecordLayoutAlignment alignment = 1;
+    RecordLayoutFunctionValues function_values = 2;
+    RecordLayoutAxisPoints axis_points = 3;
+    RecordLayoutAxisRescale axis_rescale = 4;
+    RecordLayoutAxisCount axis_count = 5;
+    RecordLayoutRescaleCount rescale_count = 6;
+    RecordLayoutFixedAxisCount fixed_axis_count = 7;
+    RecordLayoutIdentification identification = 8;
+    RecordLayoutAxisOperand axis_operand = 9;
+    RecordLayoutAddressReference address_reference = 10;
+    RecordLayoutStaticFlagMarker static_flag = 11;
+
+    // Fallback for lower-priority or not-yet-typed component lines.
+    string raw_component = 20;
+  }
+}
+
+message RecordLayoutAlignment {
+  RecordLayoutAlignmentType type = 1;
+  uint32 alignment_border = 2;
+}
+
+message RecordLayoutFunctionValues {
+  uint32 position = 1;
+  DataType datatype = 2;
+  RecordLayoutIndexMode index_mode = 3;
+  RecordLayoutAddressType address_type = 4;
+}
+
+message RecordLayoutAxisPoints {
+  RecordLayoutAxis axis = 1;
+  uint32 position = 2;
+  DataType datatype = 3;
+  IndexOrder index_order = 4;
+  RecordLayoutAddressType address_type = 5;
+}
+
+message RecordLayoutAxisRescale {
+  RecordLayoutAxis axis = 1;
+  uint32 position = 2;
+  DataType datatype = 3;
+  uint32 max_number_of_rescale_pairs = 4;
+  IndexOrder index_order = 5;
+  RecordLayoutAddressType address_type = 6;
+}
+
+message RecordLayoutAxisCount {
+  RecordLayoutAxis axis = 1;
+  uint32 position = 2;
+  DataType datatype = 3;
+}
+
+message RecordLayoutRescaleCount {
+  RecordLayoutAxis axis = 1;
+  uint32 position = 2;
+  DataType datatype = 3;
+}
+
+message RecordLayoutFixedAxisCount {
+  RecordLayoutAxis axis = 1;
+  uint32 number_of_axis_points = 2;
+}
+
+message RecordLayoutIdentification {
+  uint32 position = 1;
+  DataType datatype = 2;
+}
+
+message RecordLayoutAxisOperand {
+  RecordLayoutAxisOperandKind kind = 1;
+  RecordLayoutAxis axis = 2;
+  uint32 position = 3;
+  DataType datatype = 4;
+}
+
+message RecordLayoutAddressReference {
+  RecordLayoutAddressReferenceKind kind = 1;
+  RecordLayoutAxis axis = 2;
+  uint32 position = 3;
+  DataType datatype = 4;
+}
+
+message RecordLayoutStaticFlagMarker {
+  RecordLayoutStaticFlag flag = 1;
+}

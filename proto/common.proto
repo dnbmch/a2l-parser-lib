@@ -1,0 +1,206 @@
+// Phase-1 shared enums for live XCP signal interpretation.
+// Hand-authored from ASAM MCD-2 MC V1.7.1 spec corpus.
+//
+// Copyright: Balint Kurucz - Danube Mechatronics Kft.
+// License: Dual (GPL or Commercial) - see License.md
+
+syntax = "proto3";
+
+package a2l.v1;
+
+// ---------------------------------------------------------------------------
+// ASAP2 data-type enum.
+// Source: docs/spec_corpus/tables/mcd2mc/predefined_data_types.md (datatype)
+// ---------------------------------------------------------------------------
+enum DataType {
+  DATA_TYPE_UNSPECIFIED = 0;
+  DATA_TYPE_UBYTE      = 1;
+  DATA_TYPE_SBYTE      = 2;
+  DATA_TYPE_UWORD      = 3;
+  DATA_TYPE_SWORD      = 4;
+  DATA_TYPE_ULONG      = 5;
+  DATA_TYPE_SLONG      = 6;
+  DATA_TYPE_A_UINT64   = 7;
+  DATA_TYPE_A_INT64    = 8;
+  DATA_TYPE_FLOAT16_IEEE = 9;
+  DATA_TYPE_FLOAT32_IEEE = 10;
+  DATA_TYPE_FLOAT64_IEEE = 11;
+}
+
+// ---------------------------------------------------------------------------
+// Byte-order enum.
+// Source: docs/spec_corpus/tables/mcd2mc/predefined_data_types.md (byteorder)
+//         docs/spec_corpus/tables/mcd2mc/byte_order_layout.md
+// ---------------------------------------------------------------------------
+enum ByteOrder {
+  BYTE_ORDER_UNSPECIFIED      = 0;
+  BYTE_ORDER_LITTLE_ENDIAN    = 1;  // MSB_LAST / Intel
+  BYTE_ORDER_BIG_ENDIAN       = 2;  // MSB_FIRST / Motorola
+  BYTE_ORDER_MSB_FIRST_MSW_LAST  = 3;
+  BYTE_ORDER_MSB_LAST_MSW_FIRST  = 4;
+}
+
+// ---------------------------------------------------------------------------
+// Index order for multi-dimensional data.
+// Source: docs/spec_corpus/tables/mcd2mc/predefined_data_types.md (indexorder)
+// ---------------------------------------------------------------------------
+enum IndexOrder {
+  INDEX_ORDER_UNSPECIFIED = 0;
+  INDEX_ORDER_INCR        = 1;
+  INDEX_ORDER_DECR        = 2;
+}
+
+// ---------------------------------------------------------------------------
+// Characteristic type.
+// Source: docs/spec_corpus/spec_cards/characteristic.md (type field)
+// ---------------------------------------------------------------------------
+enum CharacteristicType {
+  CHARACTERISTIC_TYPE_UNSPECIFIED = 0;
+  CHARACTERISTIC_TYPE_ASCII       = 1;
+  CHARACTERISTIC_TYPE_CURVE       = 2;
+  CHARACTERISTIC_TYPE_MAP         = 3;
+  CHARACTERISTIC_TYPE_CUBOID      = 4;
+  CHARACTERISTIC_TYPE_CUBE_4      = 5;
+  CHARACTERISTIC_TYPE_CUBE_5      = 6;
+  CHARACTERISTIC_TYPE_VAL_BLK     = 7;
+  CHARACTERISTIC_TYPE_VALUE       = 8;
+}
+
+// ---------------------------------------------------------------------------
+// Conversion type for COMPU_METHOD.
+// Source: docs/spec_corpus/spec_cards/compu_method.md (conversion_type field)
+// ---------------------------------------------------------------------------
+enum ConversionType {
+  CONVERSION_TYPE_UNSPECIFIED = 0;
+  CONVERSION_TYPE_IDENTICAL   = 1;
+  CONVERSION_TYPE_FORM        = 2;
+  CONVERSION_TYPE_LINEAR      = 3;
+  CONVERSION_TYPE_RAT_FUNC    = 4;
+  CONVERSION_TYPE_TAB_INTP    = 5;
+  CONVERSION_TYPE_TAB_NOINTP  = 6;
+  CONVERSION_TYPE_TAB_VERB    = 7;
+}
+
+// ---------------------------------------------------------------------------
+// Deposit mode (MOD_COMMON).
+// Source: docs/spec_corpus/spec_cards/mod_common.md
+// ---------------------------------------------------------------------------
+enum DepositMode {
+  DEPOSIT_MODE_UNSPECIFIED = 0;
+  DEPOSIT_MODE_ABSOLUTE    = 1;
+  DEPOSIT_MODE_DIFFERENCE  = 2;
+}
+
+// ---------------------------------------------------------------------------
+// Monotony constraint for axes.
+// Source: docs/spec_corpus/spec_cards/axis_descr.md (monotony field)
+// ---------------------------------------------------------------------------
+enum Monotony {
+  MONOTONY_UNSPECIFIED    = 0;
+  MONOTONY_MON_DECREASE   = 1;
+  MONOTONY_MON_INCREASE   = 2;
+  MONOTONY_STRICT_DECREASE = 3;
+  MONOTONY_STRICT_INCREASE = 4;
+  MONOTONY_MONOTONOUS      = 5;
+  MONOTONY_STRICT_MON      = 6;
+  MONOTONY_NOT_MON         = 7;
+}
+
+// ---------------------------------------------------------------------------
+// Axis attribute (type of axis description).
+// Source: docs/spec_corpus/spec_cards/axis_descr.md (attribute field)
+// ---------------------------------------------------------------------------
+enum AxisAttribute {
+  AXIS_ATTRIBUTE_UNSPECIFIED = 0;
+  AXIS_ATTRIBUTE_CURVE_AXIS  = 1;
+  AXIS_ATTRIBUTE_COM_AXIS    = 2;
+  AXIS_ATTRIBUTE_FIX_AXIS    = 3;
+  AXIS_ATTRIBUTE_RES_AXIS    = 4;
+  AXIS_ATTRIBUTE_STD_AXIS    = 5;
+}
+
+// ---------------------------------------------------------------------------
+// Unit type.
+// Source: docs/spec_corpus/spec_cards/unit.md (type field)
+// ---------------------------------------------------------------------------
+enum UnitType {
+  UNIT_TYPE_UNSPECIFIED  = 0;
+  UNIT_TYPE_DERIVED      = 1;
+  UNIT_TYPE_EXTENDED_SI  = 2;
+}
+
+// ---------------------------------------------------------------------------
+// Memory-segment program type.
+// Source: docs/spec_corpus/spec_cards/memory_segment.md (prg_type field)
+//         docs/spec_corpus/tables/mcd2mc/memory_segment_attributes.md
+// ---------------------------------------------------------------------------
+enum MemoryPrgType {
+  MEMORY_PRG_TYPE_UNSPECIFIED           = 0;
+  MEMORY_PRG_TYPE_CALIBRATION_VARIABLES = 1;
+  MEMORY_PRG_TYPE_CODE                  = 2;
+  MEMORY_PRG_TYPE_DATA                  = 3;
+  MEMORY_PRG_TYPE_EXCLUDED_FROM_FLASH   = 4;
+  MEMORY_PRG_TYPE_OFFLINE_DATA          = 5;
+  MEMORY_PRG_TYPE_RESERVED              = 6;
+  MEMORY_PRG_TYPE_SERAM                 = 7;
+  MEMORY_PRG_TYPE_VARIABLES             = 8;
+}
+
+// ---------------------------------------------------------------------------
+// Memory-segment memory type.
+// Source: docs/spec_corpus/spec_cards/memory_segment.md (memory_type field)
+// ---------------------------------------------------------------------------
+enum MemoryType {
+  MEMORY_TYPE_UNSPECIFIED  = 0;
+  MEMORY_TYPE_EEPROM       = 1;
+  MEMORY_TYPE_EPROM        = 2;
+  MEMORY_TYPE_FLASH        = 3;
+  MEMORY_TYPE_RAM          = 4;
+  MEMORY_TYPE_ROM          = 5;
+  MEMORY_TYPE_REGISTER     = 6;
+  MEMORY_TYPE_NOT_IN_ECU   = 7;
+}
+
+// ---------------------------------------------------------------------------
+// Memory-segment attribute.
+// Source: docs/spec_corpus/spec_cards/memory_segment.md (attribute field)
+// ---------------------------------------------------------------------------
+enum MemoryAttribute {
+  MEMORY_ATTRIBUTE_UNSPECIFIED = 0;
+  MEMORY_ATTRIBUTE_INTERN      = 1;
+  MEMORY_ATTRIBUTE_EXTERN      = 2;
+}
+
+// ---------------------------------------------------------------------------
+// Layout (row/column direction) for multi-dimensional measurements.
+// Source: docs/spec_corpus/spec_cards/measurement.md (layout field)
+// ---------------------------------------------------------------------------
+enum MatrixLayout {
+  MATRIX_LAYOUT_UNSPECIFIED = 0;
+  MATRIX_LAYOUT_ROW_DIR     = 1;
+  MATRIX_LAYOUT_COL_DIR     = 2;
+}
+
+// ---------------------------------------------------------------------------
+// Calibration access mode.
+// Source: ASAP2 1.7.1 page 74 (CALIBRATION_ACCESS)
+//         docs/spec_corpus/spec_cards/axis_pts.md
+// Shared by AXIS_PTS, CHARACTERISTIC, and BLOB.
+// Supersedes READ_ONLY since ASAM MCD-2 MC V1.4.
+// ---------------------------------------------------------------------------
+enum CalibrationAccess {
+  CALIBRATION_ACCESS_UNSPECIFIED      = 0;
+  CALIBRATION_ACCESS_CALIBRATION      = 1;
+  CALIBRATION_ACCESS_NO_CALIBRATION   = 2;
+  CALIBRATION_ACCESS_NOT_IN_MCD_SYSTEM = 3;
+  CALIBRATION_ACCESS_OFFLINE_CALIBRATION = 4;
+}
+
+// ---------------------------------------------------------------------------
+// Variant naming convention.
+// Source: ASAM MCD-2 MC V1.7.1 (VAR_NAMING keyword)
+// ---------------------------------------------------------------------------
+enum VarNaming {
+  VAR_NAMING_UNSPECIFIED = 0;
+  VAR_NAMING_NUMERIC     = 1;
+}

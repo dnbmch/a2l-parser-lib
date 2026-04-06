@@ -1,0 +1,437 @@
+// Phase-1 XCP messages for live signal interpretation.
+// Hand-authored from ASAM XCP spec corpus and IF_DATA spec cards.
+//
+// Copyright: Balint Kurucz - Danube Mechatronics Kft.
+// License: Dual (GPL or Commercial) - see License.md
+
+syntax = "proto3";
+
+package a2l.v1;
+
+import "common.proto";
+
+// ===========================================================================
+// XCP-specific enums.
+// ===========================================================================
+
+// Address granularity for XCP protocol layer.
+// Source: docs/spec_corpus/spec_cards/xcp_protocol_layer.md
+enum AddressGranularity {
+  ADDRESS_GRANULARITY_UNSPECIFIED = 0;
+  ADDRESS_GRANULARITY_BYTE        = 1;
+  ADDRESS_GRANULARITY_WORD        = 2;
+  ADDRESS_GRANULARITY_DWORD       = 3;
+}
+
+// DAQ configuration type.
+// Source: docs/spec_corpus/spec_cards/xcp_daq.md
+enum DaqConfigType {
+  DAQ_CONFIG_TYPE_UNSPECIFIED = 0;
+  DAQ_CONFIG_TYPE_STATIC      = 1;
+  DAQ_CONFIG_TYPE_DYNAMIC     = 2;
+}
+
+// DAQ optimisation type.
+// Source: docs/spec_corpus/spec_cards/xcp_daq.md
+enum DaqOptimisationType {
+  DAQ_OPTIMISATION_TYPE_UNSPECIFIED           = 0;
+  DAQ_OPTIMISATION_TYPE_DEFAULT               = 1;
+  DAQ_OPTIMISATION_TYPE_ODT_TYPE_16           = 2;
+  DAQ_OPTIMISATION_TYPE_ODT_TYPE_32           = 3;
+  DAQ_OPTIMISATION_TYPE_ODT_TYPE_64           = 4;
+  DAQ_OPTIMISATION_TYPE_ODT_TYPE_ALIGNMENT    = 5;
+  DAQ_OPTIMISATION_TYPE_MAX_ENTRY_SIZE        = 6;
+}
+
+// DAQ address extension mode.
+// Source: docs/spec_corpus/spec_cards/xcp_daq.md
+enum DaqAddressExtensionMode {
+  DAQ_ADDRESS_EXTENSION_MODE_UNSPECIFIED     = 0;
+  DAQ_ADDRESS_EXTENSION_MODE_FREE            = 1;
+  DAQ_ADDRESS_EXTENSION_MODE_SAME            = 2;
+  DAQ_ADDRESS_EXTENSION_MODE_OPTIMIZED       = 3;
+}
+
+// PID identification field type.
+// Source: docs/spec_corpus/spec_cards/xcp_daq.md
+enum IdentificationFieldType {
+  IDENTIFICATION_FIELD_TYPE_UNSPECIFIED             = 0;
+  IDENTIFICATION_FIELD_TYPE_ABSOLUTE                = 1;
+  IDENTIFICATION_FIELD_TYPE_RELATIVE_BYTE           = 2;
+  IDENTIFICATION_FIELD_TYPE_RELATIVE_WORD           = 3;
+  IDENTIFICATION_FIELD_TYPE_RELATIVE_WORD_ALIGNED   = 4;
+}
+
+// Overload indication method.
+// Source: docs/spec_corpus/spec_cards/xcp_daq.md
+enum OverloadIndication {
+  OVERLOAD_INDICATION_UNSPECIFIED    = 0;
+  OVERLOAD_INDICATION_NO_OVERLOAD   = 1;
+  OVERLOAD_INDICATION_PID           = 2;
+  OVERLOAD_INDICATION_EVENT         = 3;
+}
+
+// Timestamp size.
+// Source: docs/spec_corpus/spec_cards/xcp_timestamp.md
+//         docs/spec_corpus/tables/xcp_protocol/xcp_timestamp_mode.md
+enum TimestampSize {
+  TIMESTAMP_SIZE_UNSPECIFIED = 0;
+  TIMESTAMP_SIZE_NO_TIME     = 1;
+  TIMESTAMP_SIZE_BYTE        = 2;
+  TIMESTAMP_SIZE_WORD        = 3;
+  TIMESTAMP_SIZE_DWORD       = 4;
+}
+
+// Timestamp unit (resolution base).
+// Source: docs/spec_corpus/spec_cards/xcp_timestamp.md
+enum TimestampUnit {
+  TIMESTAMP_UNIT_UNSPECIFIED = 0;
+  TIMESTAMP_UNIT_1NS         = 1;
+  TIMESTAMP_UNIT_10NS        = 2;
+  TIMESTAMP_UNIT_100NS       = 3;
+  TIMESTAMP_UNIT_1US         = 4;
+  TIMESTAMP_UNIT_10US        = 5;
+  TIMESTAMP_UNIT_100US       = 6;
+  TIMESTAMP_UNIT_1MS         = 7;
+  TIMESTAMP_UNIT_10MS        = 8;
+  TIMESTAMP_UNIT_100MS       = 9;
+  TIMESTAMP_UNIT_1S          = 10;
+  TIMESTAMP_UNIT_1PS         = 11;
+  TIMESTAMP_UNIT_10PS        = 12;
+  TIMESTAMP_UNIT_100PS       = 13;
+}
+
+// Checksum algorithm type.
+// Source: docs/spec_corpus/spec_cards/xcp_segment_page_checksum.md
+enum ChecksumType {
+  CHECKSUM_TYPE_UNSPECIFIED        = 0;
+  CHECKSUM_TYPE_XCP_ADD_11         = 1;
+  CHECKSUM_TYPE_XCP_ADD_12         = 2;
+  CHECKSUM_TYPE_XCP_ADD_14         = 3;
+  CHECKSUM_TYPE_XCP_ADD_22         = 4;
+  CHECKSUM_TYPE_XCP_ADD_24         = 5;
+  CHECKSUM_TYPE_XCP_ADD_44         = 6;
+  CHECKSUM_TYPE_XCP_CRC_16         = 7;
+  CHECKSUM_TYPE_XCP_CRC_16_CITT   = 8;
+  CHECKSUM_TYPE_XCP_CRC_32         = 9;
+  CHECKSUM_TYPE_XCP_USER_DEFINED   = 10;
+}
+
+// CAN sample rate.
+// Source: docs/spec_corpus/spec_cards/xcp_on_can.md
+enum SampleRate {
+  SAMPLE_RATE_UNSPECIFIED = 0;
+  SAMPLE_RATE_SINGLE      = 1;
+  SAMPLE_RATE_TRIPLE      = 2;
+}
+
+// ===========================================================================
+// IF_DATA XCP / XCPplus top-level container.
+// Source: docs/spec_corpus/spec_cards/if_data_xcp.md
+//         docs/spec_corpus/spec_cards/xcpplus.md
+// ===========================================================================
+message IfDataXcp {
+  // IF_DATA XCP version (XCPplus only, e.g. 0x0105).
+  optional uint32 if_data_xcp_version = 2;
+
+  // Default common-parameter blocks (module-level).
+  optional XcpProtocolLayer protocol_layer = 10;
+  optional XcpDaq           daq            = 11;
+
+  // Repeated transport blocks.
+  repeated XcpOnCan xcp_on_cans     = 20;
+  repeated XcpOnIp  xcp_on_tcp_ips  = 21;
+  repeated XcpOnIp  xcp_on_udp_ips  = 22;
+
+  // Measurement-level DAQ event binding.
+  optional XcpDaqEvent daq_event = 30;
+
+  // Segment/page/checksum (memory-segment-level IF_DATA).
+  repeated XcpSegment segments = 40;
+
+  // Raw fallback for unsupported AML-defined or vendor blocks.
+  repeated string raw_blocks = 50;
+}
+
+// ===========================================================================
+// PROTOCOL_LAYER - XCP common protocol parameters.
+// Source: docs/spec_corpus/spec_cards/xcp_protocol_layer.md
+// ===========================================================================
+message XcpProtocolLayer {
+  // Required ordered fields.
+  uint32             protocol_version    = 1;  // e.g. 0x0100
+  uint32             t1_ms               = 2;
+  uint32             t2_ms               = 3;
+  uint32             t3_ms               = 4;
+  uint32             t4_ms               = 5;
+  uint32             t5_ms               = 6;
+  uint32             t6_ms               = 7;
+  uint32             t7_ms               = 8;
+  uint32             max_cto             = 9;
+  uint32             max_dto             = 10;
+  ByteOrder          byte_order          = 11;
+  AddressGranularity address_granularity = 12;
+
+  // Optional fields.
+  repeated uint32 optional_cmds        = 20;  // command codes
+  repeated uint32 optional_level1_cmds = 21;
+
+  optional uint32 communication_mode_supported = 22;
+  optional string seed_and_key_external_function = 23;
+  optional uint32 max_dto_stim = 24;
+}
+
+// ===========================================================================
+// DAQ - XCP data acquisition parameters.
+// Source: docs/spec_corpus/spec_cards/xcp_daq.md
+// ===========================================================================
+message XcpDaq {
+  // Required ordered fields.
+  DaqConfigType             daq_config_type             = 1;
+  uint32                    max_daq                     = 2;
+  uint32                    max_event_channel           = 3;
+  uint32                    min_daq                     = 4;
+  DaqOptimisationType       optimisation_type           = 5;
+  DaqAddressExtensionMode   address_extension_mode      = 6;
+  IdentificationFieldType   identification_field_type   = 7;
+  uint32                    granularity_odt_entry_size_daq = 8;
+  uint32                    max_odt_entry_size_daq      = 9;
+  OverloadIndication        overload_indication         = 10;
+
+  // Optional capability flags.
+  optional bool prescaler_supported  = 20;
+  optional bool resume_supported     = 21;
+  optional bool store_daq_supported  = 22;
+
+  // STIM parameters.
+  optional XcpDaqStim stim = 25;
+
+  // Timestamp support.
+  optional XcpTimestampSupported timestamp_supported = 26;
+
+  // Predefined static DAQ lists.
+  repeated XcpDaqList daq_lists = 30;
+
+  // Events.
+  repeated XcpDaqEventChannel events = 31;
+
+  // DAQ memory consumption parameters.
+  optional XcpDaqMemory daq_memory_consumption = 35;
+
+  // Raw fallback for dynamic-DAQ capability flags and extensions.
+  repeated string raw_extensions = 40;
+}
+
+message XcpDaqStim {
+  uint32 granularity_odt_entry_size_stim = 1;
+  uint32 max_odt_entry_size_stim        = 2;
+  optional uint32 min_st_stim           = 3;
+}
+
+message XcpTimestampSupported {
+  uint32        timestamp_ticks = 1;
+  TimestampSize timestamp_size  = 2;
+  TimestampUnit timestamp_unit  = 3;
+  optional bool timestamp_fixed = 4;
+}
+
+// Predefined DAQ list (STATIC configuration).
+message XcpDaqList {
+  uint32 daq_list_number = 1;
+  uint32 daq_list_type   = 2;
+  uint32 max_odt         = 3;
+  uint32 max_odt_entries = 4;
+  optional uint32 first_pid = 5;
+  optional uint32 event_fixed = 6;
+}
+
+// EVENT channel definition.
+// Source: docs/spec_corpus/spec_cards/xcp_daq.md (event sub-block)
+//         docs/spec_corpus/tables/xcp_protocol/xcp_event_parameters.md
+message XcpDaqEventChannel {
+  string name                  = 1;
+  string short_name            = 2;
+  uint32 event_channel_number  = 3;
+  uint32 daq_list_type         = 4;
+  uint32 max_daq_list          = 5;
+  uint32 time_cycle            = 6;
+  uint32 time_unit             = 7;
+  uint32 priority              = 8;
+  optional uint32 consistency  = 9;
+}
+
+// DAQ memory consumption parameters.
+// Source: docs/spec_corpus/tables/xcp_protocol/xcp_daq_memory_parameters.md
+message XcpDaqMemory {
+  optional uint32 odt_size                        = 1;
+  optional uint32 odt_entry_size                  = 2;
+  optional uint32 odt_daq_buffer_element_size     = 3;
+  optional uint32 odt_stim_buffer_element_size    = 4;
+  optional uint32 odt_daq_buffer_element_reserve  = 5;
+  optional uint32 odt_stim_buffer_element_reserve = 6;
+  optional uint32 daq_size                        = 7;
+  optional uint64 daq_memory_limit                = 8;
+}
+
+// ===========================================================================
+// DAQ_EVENT - measurement-level DAQ event binding.
+// Source: docs/spec_corpus/spec_cards/xcp_daq_event.md
+// ===========================================================================
+message XcpDaqEvent {
+  oneof binding {
+    XcpFixedEventList fixed_event_list = 1;
+    XcpVariableEventList variable_event_list = 2;
+  }
+}
+
+message XcpFixedEventList {
+  repeated uint32 event_numbers = 1;
+}
+
+message XcpVariableEventList {
+  repeated uint32 available_event_list   = 1;
+  repeated uint32 default_event_list     = 2;
+  repeated uint32 consistency_event_list = 3;
+}
+
+// ===========================================================================
+// XCP_ON_CAN - CAN transport parameters.
+// Source: docs/spec_corpus/spec_cards/xcp_on_can.md
+//         docs/spec_corpus/tables/xcp_can/can_frame_parameters.md
+// ===========================================================================
+message XcpOnCan {
+  // Required ordered field.
+  uint32 transport_version = 1;
+
+  // CAN IDs (bit 31 = extended frame flag per spec).
+  optional uint32 can_id_broadcast              = 10;
+  optional uint32 can_id_master                 = 11;
+  optional bool   can_id_master_incremental     = 12;
+  optional uint32 can_id_slave                  = 13;
+  optional uint32 can_id_get_daq_clock_multicast = 14;
+
+  // CAN bus parameters.
+  optional uint32     baudrate     = 20;
+  optional uint32     sample_point = 21;
+  optional SampleRate sample_rate  = 22;
+  optional uint32     btl_cycles   = 23;
+  optional uint32     sjw          = 24;
+  optional uint32     sync_edge    = 25;
+
+  // Frame size.
+  optional uint32 max_dlc_required = 30;
+
+  // CAN-FD extension.
+  optional XcpCanFd can_fd = 31;
+
+  // DAQ-list CAN-ID routing.
+  repeated XcpDaqListCanId daq_list_can_ids    = 35;
+  repeated XcpEventCanIdList event_can_id_lists = 36;
+
+  // Operational limits.
+  optional uint32 max_bus_load               = 40;
+  optional bool   measurement_split_allowed  = 41;
+
+  // Optional transport-layer sub-commands.
+  repeated uint32 optional_tl_subcmds = 45;
+
+  // Transport-local overrides.
+  optional XcpProtocolLayer protocol_layer = 50;
+  optional XcpDaq           daq            = 51;
+  optional string           transport_layer_instance = 52;
+}
+
+message XcpCanFd {
+  optional uint32 max_dlc          = 1;
+  optional uint32 can_fd_data_transfer_baudrate = 2;
+  optional uint32 sample_point     = 3;
+  optional uint32 btl_cycles       = 4;
+  optional uint32 sjw              = 5;
+  optional bool   secondary_sample_point = 6;
+  optional bool   transceiver_delay_compensation = 7;
+}
+
+message XcpDaqListCanId {
+  uint32 daq_list_number = 1;
+
+  oneof can_id_type {
+    uint32 fixed_can_id    = 2;
+    bool   variable_can_id = 3;
+  }
+}
+
+message XcpEventCanIdList {
+  uint32          event_channel_number = 1;
+  repeated uint32 can_ids              = 2;
+}
+
+// ===========================================================================
+// XCP_ON_TCP_IP / XCP_ON_UDP_IP - Ethernet transport parameters.
+// Source: docs/spec_corpus/spec_cards/xcp_on_ethernet.md
+//         docs/spec_corpus/tables/xcp_ethernet/eth_frame_parameters.md
+// ===========================================================================
+message XcpOnIp {
+  // Required ordered fields.
+  uint32 transport_version = 1;
+  uint32 port              = 2;
+
+  // Endpoint (mutually exclusive).
+  oneof endpoint {
+    string host_name = 5;
+    string address   = 6;  // IPv4 dotted-quad
+    string ipv6      = 7;
+  }
+
+  // Operational limits.
+  optional uint32 max_bus_load   = 20;
+  optional uint32 max_bit_rate   = 21;
+  optional uint32 packet_alignment = 22;
+
+  // Optional transport-layer sub-commands.
+  repeated uint32 optional_tl_subcmds = 25;
+
+  // Transport-local overrides.
+  optional XcpProtocolLayer protocol_layer = 30;
+  optional XcpDaq           daq            = 31;
+  optional string           transport_layer_instance = 32;
+}
+
+// ===========================================================================
+// SEGMENT / PAGE / CHECKSUM - memory-segment XCP extension.
+// Source: docs/spec_corpus/spec_cards/xcp_segment_page_checksum.md
+// ===========================================================================
+message XcpSegment {
+  uint32 segment_number     = 1;
+  uint32 page_count         = 2;
+  uint32 address_extension  = 3;
+  uint32 compression_method = 4;
+  uint32 encryption_method  = 5;
+
+  repeated XcpPage pages = 10;
+
+  optional XcpChecksum checksum = 20;
+
+  repeated XcpAddressMapping address_mappings = 25;
+
+  optional uint32 default_page_number = 30;
+}
+
+message XcpPage {
+  uint32 page_number  = 1;
+  string ecu_access   = 2;  // e.g. "XCP_READ_ACCESS_WITH_ECU_ONLY"
+  string xcp_access   = 3;  // e.g. "XCP_READ_ACCESS_NOT_ALLOWED"
+  optional bool init_segment = 4;
+}
+
+message XcpChecksum {
+  ChecksumType type             = 1;
+  optional uint32 max_block_size   = 2;
+  optional string external_function = 3;
+  optional uint32 mta_block_size_align = 4;
+}
+
+message XcpAddressMapping {
+  uint64 mapping_address = 1;
+  uint64 original_address = 2;
+  uint64 length           = 3;
+}
