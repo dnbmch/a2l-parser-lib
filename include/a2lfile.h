@@ -399,7 +399,8 @@ struct Line
 
     static LineItem* invli()
     {
-        static LineItem li(LineItem::Invalid, "", &li);
+        static LineItem li(LineItem::Invalid, "");
+        li._next = &li;
         return &li;
     }
 
