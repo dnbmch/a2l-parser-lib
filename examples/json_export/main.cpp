@@ -16,8 +16,8 @@
 #include <iostream>
 #include <string>
 
-#include "a2lfile.h"
-#include "extract.h"
+#include "a2l/a2lfile.h"
+#include "a2l/extract.h"
 
 #include <google/protobuf/util/json_util.h>
 
@@ -37,7 +37,7 @@ int main(int argc, char* argv[]) {
     }
 
     // 2. Extract into the protobuf contract
-    a2l::v1::A2lFile result = extract::extractFile(file.get());
+    a2l::A2lFile result = a2l::extract::extractFile(file.get());
 
     // 3. Configure JSON output (pretty-print with enum names)
     google::protobuf::util::JsonPrintOptions opts;

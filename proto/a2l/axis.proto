@@ -6,7 +6,7 @@
 
 syntax = "proto3";
 
-package a2l.v1;
+package a2l;
 
 // ===========================================================================
 // Reusable helper messages.

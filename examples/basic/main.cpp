@@ -13,8 +13,8 @@
 #include <iostream>
 #include <string>
 
-#include "a2lfile.h"
-#include "extract.h"
+#include "a2l/a2lfile.h"
+#include "a2l/extract.h"
 
 using namespace std;
 
@@ -32,7 +32,7 @@ int main(int argc, char* argv[]) {
     }
 
     // 2. Extract into the protobuf contract
-    a2l::v1::A2lFile result = extract::extractFile(file.get());
+    a2l::A2lFile result = a2l::extract::extractFile(file.get());
 
     // 3. Walk the extracted data
     for (const auto& mod : result.modules()) {
@@ -43,7 +43,7 @@ int main(int argc, char* argv[]) {
         // Print measurements with address and data type
         for (const auto& m : mod.measurements()) {
             cout << "  MEASUREMENT " << m.name()
-                 << "  type=" << a2l::v1::DataType_Name(m.datatype())
+                 << "  type=" << a2l::DataType_Name(m.datatype())
                  << "  conv=" << m.conversion();
             if (m.has_ecu_address())
                 cout << "  addr=0x" << hex << m.ecu_address() << dec;

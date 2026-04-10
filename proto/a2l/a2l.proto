@@ -6,13 +6,13 @@
 
 syntax = "proto3";
 
-package a2l.v1;
+package a2l;
 
-import "axis.proto";
-import "ccp.proto";
-import "common.proto";
-import "record_layout.proto";
-import "xcp.proto";
+import "a2l/axis.proto";
+import "a2l/ccp.proto";
+import "a2l/common.proto";
+import "a2l/record_layout.proto";
+import "a2l/xcp.proto";
 
 // ===========================================================================
 // Top-level file container.

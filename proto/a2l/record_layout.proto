@@ -6,9 +6,9 @@
 
 syntax = "proto3";
 
-package a2l.v1;
+package a2l;
 
-import "common.proto";
+import "a2l/common.proto";
 
 // ===========================================================================
 // RECORD_LAYOUT-specific enums.
