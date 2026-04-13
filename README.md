@@ -1,5 +1,11 @@
 # a2l-parser-lib
 
+History: I came into this slightly pre-damaged by a project where I had to deliver HEXplorer A2L parser extensions / fixes for years. That cost me a fair amount of nerves, so I eventually decided to dump that frustration somewhere useful and, long before the LLM era, built a fast, block-based, sort-of lexer-free A2L parser that is actually easy to use.
+
+You can use it freely in any open-source project. If the platform your heart desires is missing, write to me and I’ll try to add it quickly. If you are considering integrating it into your product, avoid the frustration and use something that works plug and play. Feel free to contact me and we can work out a deal that fits. In that case, you would not be limited to a static library, you would get the parser source code as well.
+
+Now, with the arrival of coding agents, I have extended the library and added a viewer to showcase what it can do. Try it.
+
 Prebuilt static library, public headers, and protobuf schema for the **a2l-parser** — a C++17 library that parses ASAP2 (ASAM MCD-2MC) A2L files into Protocol Buffer messages.
 
 **Author:** Danube Mechatronics Kft.
@@ -13,6 +19,7 @@ Prebuilt static libraries are available on the [Releases](https://github.com/dnb
 | `a2lextract-x86_64-windows-mingw` | Windows MinGW GCC (.a) |
 | `a2lextract-x86_64-linux-gnu` | Linux x86_64 (.a) |
 | `a2lextract-aarch64-linux-gnu` | Linux ARM64 (.a) |
+| `a2lextract-x86_64-windows-msvc` | Windows MSVC (.lib) |
 | `a2lextract-headers` | Public headers and proto files |
 
 ## Quick Start
@@ -25,7 +32,7 @@ cd a2l-parser-lib
 # 2. Download and extract the prebuilt library for your platform
 #    (from the Releases page, extract into lib/)
 mkdir -p lib
-tar xzf a2lextract-x86_64-linux-gnu-v0.1.0.tar.gz -C lib/
+tar xzf a2lextract-x86_64-linux-gnu-v0.2.0.tar.gz -C lib/
 
 # 3. Build the examples
 cmake -B build -DA2L_LIB_DIR=lib
@@ -50,7 +57,7 @@ cmake --build build
 #include "extract.h"
 
 auto file = a2lfile::Loader::readA2lFile("path/to/file.a2l");
-a2l::v1::A2lFile result = extract::extractFile(file.get());
+a2l::A2lFile result = extract::extractFile(file.get());
 
 for (const auto& mod : result.modules()) {
     // Access measurements, characteristics, XCP/CCP config, etc.
