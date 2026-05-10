@@ -10,6 +10,12 @@
  *  Keep this here if you choose A).
  */
 
+/*
+ *  DEPRECATED: scheduled for removal. No callers outside this file.
+ *  Replaced by proto-generated a2l::* enums + inline string converters in
+ *  src/extract.cpp. See docs/backlog.md "a2lcfg retirement".
+ */
+
 #ifndef A2MLENUM_H
 #define A2MLENUM_H
 

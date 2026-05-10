@@ -57,7 +57,7 @@ cmake --build build
 #include "extract.h"
 
 auto file = a2lfile::Loader::readA2lFile("path/to/file.a2l");
-a2l::A2lFile result = extract::extractFile(file.get());
+a2l::A2lFile result = a2l::extract::extractFile(file.get());
 
 for (const auto& mod : result.modules()) {
     // Access measurements, characteristics, XCP/CCP config, etc.
