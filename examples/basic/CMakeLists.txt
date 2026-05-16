@@ -6,4 +6,4 @@ project(a2l_basic_example LANGUAGES CXX)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../.. ${CMAKE_CURRENT_BINARY_DIR}/a2lparser)
 
 add_executable(a2l_basic main.cpp)
-target_link_libraries(a2l_basic PRIVATE a2lextract)
+target_link_libraries(a2l_basic PRIVATE a2lparser)

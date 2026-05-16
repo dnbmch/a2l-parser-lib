@@ -16,11 +16,11 @@ Prebuilt static libraries are available on the [Releases](https://github.com/dnb
 
 | Artifact | Platform |
 |----------|----------|
-| `a2lextract-x86_64-windows-mingw` | Windows MinGW GCC (.a) |
-| `a2lextract-x86_64-linux-gnu` | Linux x86_64 (.a) |
-| `a2lextract-aarch64-linux-gnu` | Linux ARM64 (.a) |
-| `a2lextract-x86_64-windows-msvc` | Windows MSVC (.lib) |
-| `a2lextract-headers` | Public headers and proto files |
+| `a2lparser-x86_64-windows-mingw` | Windows MinGW GCC (.a) |
+| `a2lparser-x86_64-linux-gnu` | Linux x86_64 (.a) |
+| `a2lparser-aarch64-linux-gnu` | Linux ARM64 (.a) |
+| `a2lparser-x86_64-windows-msvc` | Windows MSVC (.lib) |
+| `a2lparser-headers` | Public headers and proto files |
 
 ## Quick Start
 
@@ -32,7 +32,7 @@ cd a2l-parser-lib
 # 2. Download and extract the prebuilt library for your platform
 #    (from the Releases page, extract into lib/)
 mkdir -p lib
-tar xzf a2lextract-x86_64-linux-gnu-v0.2.0.tar.gz -C lib/
+tar xzf a2lparser-x86_64-linux-gnu-v0.2.0.tar.gz -C lib/
 
 # 3. Build the examples
 cmake -B build -DA2L_LIB_DIR=lib
