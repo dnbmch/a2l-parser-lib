@@ -1,9 +1,3 @@
-/*
- *  extract: a2lfile Block/LineItem -> protobuf contract.
- *  Copyright: Balint Kurucz - Danube Mechatronics Kft.
- *  License: Dual (GPL or Commercial) - see License.md
- */
-
 #ifndef A2L_EXTRACT_H
 #define A2L_EXTRACT_H
 
