@@ -349,51 +349,51 @@ struct Line
                 {
                     string toAdd = t.substr(strStartPos, strEndPos - strStartPos + 1);
                     toAdd.erase(remove(toAdd.begin(), toAdd.end(), '\"'), toAdd.end());
-                    _lineItems.push_back(make_unique<LineItem>(LineItem::String, toAdd));
+                    _line_items.push_back(make_unique<LineItem>(LineItem::String, toAdd));
                 }
             }
             else if (isHex(t))
             {
-                _lineItems.push_back(make_unique<LineItem>(LineItem::Hex, t));
+                _line_items.push_back(make_unique<LineItem>(LineItem::Hex, t));
             }
             else if (isFloat(t))
             {
-                _lineItems.push_back(make_unique<LineItem>(LineItem::Float, t));
+                _line_items.push_back(make_unique<LineItem>(LineItem::Float, t));
             }
             else if (isDecimal(t))
             {
-                _lineItems.push_back(make_unique<LineItem>(LineItem::Decimal, t));
+                _line_items.push_back(make_unique<LineItem>(LineItem::Decimal, t));
             }
             else
             {
-                _lineItems.push_back(make_unique<LineItem>(LineItem::Identifier, t));
+                _line_items.push_back(make_unique<LineItem>(LineItem::Identifier, t));
             }
         }
-        if( _lineItems.size() )
-            _lineItems.back()->_next = invli(); /* the last item is always linked to the static invalid LineItem */
+        if( _line_items.size() )
+            _line_items.back()->_next = invli(); /* the last item is always linked to the static invalid LineItem */
     }
 
     void write(ofstream& o)
     {
-        auto pos = _lineItems.begin();
+        auto pos = _line_items.begin();
 
-        while (pos != _lineItems.end())
+        while (pos != _line_items.end())
         {
             (*pos)->write(o);
             ++pos;
-            if (pos != _lineItems.end()) o << " ";
+            if (pos != _line_items.end()) o << " ";
         }
     }
 
     void print()
     {
-        auto pos = _lineItems.begin();
+        auto pos = _line_items.begin();
 
-        while (pos != _lineItems.end())
+        while (pos != _line_items.end())
         {
             (*pos)->print();
             ++pos;
-            if (pos != _lineItems.end()) cout << " ";
+            if (pos != _line_items.end()) cout << " ";
         }
     }
 
@@ -405,7 +405,7 @@ struct Line
     }
 
     bool wasOnBlockBegin;
-    vector<unique_ptr<LineItem>> _lineItems;
+    vector<unique_ptr<LineItem>> _line_items;
 };
 
 struct Block
@@ -418,15 +418,15 @@ struct Block
 
     LineItem* liByIdx(uint64_t idx)
     {
-        if (idx < _lineItems.size())
-            return _lineItems.at(idx);
+        if (idx < _line_items.size())
+            return _line_items.at(idx);
         return Line::invli();
     }
 
     std::vector<LineItem*> lisByTxts(set<string>& s)
     {
         std::vector<LineItem*> lis;
-        for (const auto& li : this->_lineItems)
+        for (const auto& li : this->_line_items)
         {
             if ( s.find(li->toText() ) != s.end() )
             {
@@ -439,7 +439,7 @@ struct Block
     vector<LineItem*> lisByTxtAndType(string name, LineItem::Type type)
     {
         vector<LineItem*> ret;
-        for (auto& li : this->_lineItems)
+        for (auto& li : this->_line_items)
         {
             if ((li->toText() == name) && (li->_type == type))
             {
@@ -452,7 +452,7 @@ struct Block
     vector<LineItem*> lisByTxtsAndType( set<string>& s, LineItem::Type type)
     {
         vector<LineItem*> ret;
-        for (const auto& li : this->_lineItems)
+        for (const auto& li : this->_line_items)
         {
             if ( ( s.find(li->toText() ) != s.end() ) && (li->_type == type) )
             {
@@ -464,7 +464,7 @@ struct Block
 
     LineItem* liByIdent(string name)
     {
-        for (auto& li : this->_lineItems)
+        for (auto& li : this->_line_items)
         {
             if (li->_type == li->Identifier)
             {
@@ -483,19 +483,19 @@ struct Block
 
     LineItem* firstLineItem()
     {
-        return (this->_lineItems.size() ) ? this->_lineItems.at(0) : Line::invli();
+        return (this->_line_items.size() ) ? this->_line_items.at(0) : Line::invli();
     }
 
     Block* childBlockByName(string name)
     {
-        const auto itr = _childrenLookup.find(name);
-        return (itr != _childrenLookup.end()) ? itr->second : nullptr;
+        const auto itr = _children_lookup.find(name);
+        return (itr != _children_lookup.end()) ? itr->second : nullptr;
     }
 
     vector<Block*> childBlocksByName(string name)
     {
         vector<Block*> ret;
-        for (auto [itr, rangeEnd] = _childrenLookup.equal_range(name); itr != rangeEnd; ++itr)
+        for (auto [itr, rangeEnd] = _children_lookup.equal_range(name); itr != rangeEnd; ++itr)
         {
             ret.push_back(itr->second);
         }
@@ -560,12 +560,12 @@ struct Block
         if ( ignoredBlockNames.find(_name) != ignoredBlockNames.end() )
         {
             /* Blacklisted block: skip parsing but preserve raw content. */
-            _rawContent = ss.str();
+            _raw_content = ss.str();
             ss.clear();
             /* Still register in parent lookup so childBlockByName works. */
             if (_parent != nullptr)
             {
-                _parent->_childrenLookup.insert(pair<string, Block*>(_name, this));
+                _parent->_children_lookup.insert(pair<string, Block*>(_name, this));
             }
             return;
         }
@@ -583,16 +583,16 @@ struct Block
         /* Register Block in parents map*/
         if (_parent != nullptr)
         {
-            _parent->_childrenLookup.insert(pair<string, Block*>(_name, this));
+            _parent->_children_lookup.insert(pair<string, Block*>(_name, this));
         }
 
         /* Register line elements in a single list */
         LineItem* lastLi = nullptr;
         for (auto& l : _lines)
         {
-            for (auto& li : l->_lineItems)
+            for (auto& li : l->_line_items)
             {
-                _lineItems.push_back(li.get());
+                _line_items.push_back(li.get());
                 if (lastLi != nullptr) lastLi->_next = li.get();
                 lastLi = li.get();
             }
@@ -601,14 +601,14 @@ struct Block
 
     stringstream ss;
     string _name;
-    string _rawContent; // Raw text for blacklisted blocks (e.g. A2ML).
+    string _raw_content; // Raw text for blacklisted blocks (e.g. A2ML).
 
     Block* _parent;
     vector<unique_ptr<Block>> _children;
     vector<unique_ptr<Line>> _lines;
 
-    vector<LineItem*> _lineItems;
-    multimap<string, Block*> _childrenLookup;
+    vector<LineItem*> _line_items;
+    multimap<string, Block*> _children_lookup;
 
   private:
     bool parseFirstLineBlkName(string& firstLineOfBlock)
@@ -652,11 +652,11 @@ struct A2lFile
         std::pair<uint8_t,uint8_t> ret;
         if( ASAP2_VERSION == nullptr )
             return ret;
-        if( ASAP2_VERSION->_lineItems.size() != 3 )
+        if( ASAP2_VERSION->_line_items.size() != 3 )
             return ret;
 
-        ret.first = ASAP2_VERSION->_lineItems[1]->toUnsigned();
-        ret.second = ASAP2_VERSION->_lineItems[2]->toUnsigned();
+        ret.first = ASAP2_VERSION->_line_items[1]->toUnsigned();
+        ret.second = ASAP2_VERSION->_line_items[2]->toUnsigned();
         return ret;
     };
 };
