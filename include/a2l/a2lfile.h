@@ -50,10 +50,6 @@ const string decimalF = string(decimalChars.begin(), decimalChars.end());
 
 const string notAllowedInFloatF = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"; /* toDo Float might use this notation 12E-2.*/
 
-const string alphaF = "ABCDEFGHIJKLMNOPQRSTUVWXYZ_-'+[]{}()"; /* UNUSED!! */
-
-const vector<char> canBeEscaped = {'\'', '"', 'n', 'r', 't'}; /* UNUSED!! toDo string allow to escape chk trash!! */
-
 const vector<char> wpChars = {0x09 /*HT*/, 0x0A /*LF/NL*/, 0x0B /*VT*/, 0x0C /*FF/NP*/, 0x0D /*CR*/, 0x20 /*SPC*/};
 const string wpF = string(wpChars.begin(), wpChars.end());
 
