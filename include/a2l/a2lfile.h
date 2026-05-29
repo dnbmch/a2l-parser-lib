@@ -15,6 +15,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cctype>
 #include <cstdint>
 #include <fstream>
 #include <iostream>
@@ -26,85 +27,65 @@
 #include <vector>
 #include <set>
 
-/*
- *
- *
- */
-
 namespace a2lfile
 {
 
-using namespace std;
-
 /* ToDo move them to a class */
-const string asap2ver = "ASAP2_VERSION";
-const string blockBegin = "/begin";
-const string blockEnd = "/end";
-const unordered_set<string> ignoredBlockNames = {"A2ML"};
-const string commentBegin = "/*";
-const string commentEnd = "*/";
-const string lineComment = "//";
+inline const std::string asap2ver = "ASAP2_VERSION";
+inline const std::string blockBegin = "/begin";
+inline const std::string blockEnd = "/end";
+inline const std::unordered_set<std::string> ignoredBlockNames = {"A2ML"};
+inline const std::string commentBegin = "/*";
+inline const std::string commentEnd = "*/";
+inline const std::string lineComment = "//";
 
-const vector<char> decimalChars = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '-'}; /* dot . is not included */
-const string decimalF = string(decimalChars.begin(), decimalChars.end());
+inline const std::vector<char> decimalChars = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '-'}; /* dot . is not included */
+inline const std::string decimalF = std::string(decimalChars.begin(), decimalChars.end());
 
-const string notAllowedInFloatF = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"; /* toDo Float might use this notation 12E-2.*/
+inline const std::string notAllowedInFloatF = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"; /* toDo Float might use this notation 12E-2.*/
 
-const vector<char> wpChars = {0x09 /*HT*/, 0x0A /*LF/NL*/, 0x0B /*VT*/, 0x0C /*FF/NP*/, 0x0D /*CR*/, 0x20 /*SPC*/};
-const string wpF = string(wpChars.begin(), wpChars.end());
+inline const std::vector<char> wpChars = {0x09 /*HT*/, 0x0A /*LF/NL*/, 0x0B /*VT*/, 0x0C /*FF/NP*/, 0x0D /*CR*/, 0x20 /*SPC*/};
+inline const std::string wpF = std::string(wpChars.begin(), wpChars.end());
 
-static bool isString(string& str)
+inline bool isString(std::string& str)
 {
-    if (str.find("\"") != string::npos) /* toDo can be written in one line.. */
-        return true;
-    else
-        return false;
+    return str.find("\"") != std::string::npos;
 }
 
-static bool isHex(string& str)
+inline bool isHex(std::string& str)
 {
-    if (str.find("0x") != string::npos) /* toDo can be written in one line.. */
-        return true;
-    return false;
+    return str.find("0x") != std::string::npos;
 }
 
 /* toDo 1E-6 etc.. */
-static bool isFloat(string& str)
+inline bool isFloat(std::string& str)
 {
-    if (str.find('.') == string::npos) return false;
+    if (str.find('.') == std::string::npos) return false;
 
-    if (str.find_first_of(decimalF) == string::npos) return false;
+    if (str.find_first_of(decimalF) == std::string::npos) return false;
 
-    string t;
+    std::string t;
 
-    for (auto& c : str) t.push_back(toupper(c));
+    for (auto& c : str) t.push_back(static_cast<char>(std::toupper(static_cast<unsigned char>(c))));
 
-    if (t.find_first_of(notAllowedInFloatF) != string::npos) return false;
+    if (t.find_first_of(notAllowedInFloatF) != std::string::npos) return false;
 
     return true;
 }
 
-static bool isDecimal(string& str)
+inline bool isDecimal(std::string& str)
 {
-    if (str.find_first_not_of(decimalF) == string::npos)
-        return true;
-    else
-        return false;
-    // return all_of(str.begin(), str.end(), ::isdigit);
+    return str.find_first_not_of(decimalF) == std::string::npos;
 }
 
-static void printTabs(int count, ostream& o = cout)
+inline void printTabs(int count, std::ostream& o = std::cout)
 {
     for (auto tabs = 0; tabs < count; tabs++) o << "    ";
 }
 
-static bool shouldSkipShortOrWpLine(string& line)
+inline bool shouldSkipShortOrWpLine(std::string& line)
 {
-    if ((line.find_first_not_of(wpF) == string::npos) || (line.length() < 2))
-    {
-        return true;
-    }
-    return false;
+    return (line.find_first_not_of(wpF) == std::string::npos) || (line.length() < 2);
 }
 
 struct Block;
@@ -123,28 +104,28 @@ struct LineItem
         Any /* Added for convinience toDo updateFunctions to use it.. */
     };
 
-    static string itemTypeToTxt(Type t)
+    static std::string itemTypeToTxt(Type t)
     {
-        const array<string, Identifier + 1> typeNames = {"String", "Decimal", "Hex", "Float", "Identifier"};
+        const std::array<std::string, Identifier + 1> typeNames = {"String", "Decimal", "Hex", "Float", "Identifier"};
         return typeNames[static_cast<int>(t)];
     }
 
-    LineItem(Type type, string txt, LineItem* next=nullptr)
+    LineItem(Type type, std::string txt, LineItem* next=nullptr)
     {
         _type = type;
         _txt = txt;
         _next = next;
     }
 
-    string toText(bool trimmed = true)
+    std::string toText(bool trimmed = true)
     {
         if( _type == Invalid )
             return "Invalid!";
 
         if (trimmed)
         {
-            string t = _txt;
-            t.erase(remove(t.begin(), t.end(), '\"'), t.end());
+            std::string t = _txt;
+            t.erase(std::remove(t.begin(), t.end(), '\"'), t.end());
             return t;
         }
         else
@@ -162,16 +143,15 @@ struct LineItem
                 case Identifier:
                     return 0;
                 case Hex:
-                    return stoull(_txt, nullptr, 16);
+                    return std::stoull(_txt, nullptr, 16);
                 case Decimal:
-                    return stoull(_txt, nullptr, 10);
+                    return std::stoull(_txt, nullptr, 10);
                 case Float:
                     return this->toDouble();
                 default: /* Invalid */
                     return 0;
             }
         } catch (...) {
-            cerr << "Warning: malformed token '" << _txt << "'" << endl;
             return 0;
         }
     };
@@ -185,16 +165,15 @@ struct LineItem
                 case Identifier:
                     return 0;
                 case Hex:
-                    return stoll(_txt, nullptr, 16);
+                    return std::stoll(_txt, nullptr, 16);
                 case Decimal:
-                    return stoll(_txt, nullptr, 10);
+                    return std::stoll(_txt, nullptr, 10);
                 case Float:
                     return this->toDouble();
                 default: /* Invalid */
                     return 0;
             }
         } catch (...) {
-            cerr << "Warning: malformed token '" << _txt << "'" << endl;
             return 0;
         }
     }
@@ -211,17 +190,16 @@ struct LineItem
                     return toUnsigned();
                 case Decimal:
                 case Float:
-                    return stod(_txt);
+                    return std::stod(_txt);
                 default: /* Invalid */
                     return 0.0;
             }
         } catch (...) {
-            cerr << "Warning: malformed token '" << _txt << "'" << endl;
             return 0.0;
         }
     }
 
-    void write(ofstream& o)
+    void write(std::ofstream& o)
     {
         if (_type == String)
         {
@@ -235,28 +213,28 @@ struct LineItem
 
     void print()
     {
-        cout << _txt << "{" << itemTypeToTxt(_type) << "}"
+        std::cout << _txt << "{" << itemTypeToTxt(_type) << "}"
              << "[";
         switch (_type)
         {
             case String:
             case Identifier:
-                cout << "-";
+                std::cout << "-";
                 break;
             case Hex:
-                cout << toUnsigned();
+                std::cout << toUnsigned();
                 break;
             case Decimal:
-                cout << toSigned();
+                std::cout << toSigned();
                 break;
             case Float:
-                cout << stold(_txt);
+                std::cout << std::stold(_txt);
                 break;
             default:
-                cout << "?";
+                std::cout << "?";
                 break;
         }
-        cout << "]";
+        std::cout << "]";
     }
 
 
@@ -309,28 +287,28 @@ struct LineItem
 
     LineItem* _next;
     Type _type;
-    string _txt;
+    std::string _txt;
 };
 
 struct Line
 {
-    Line(string& line, bool wasOnBlockBegin = false) : wasOnBlockBegin(wasOnBlockBegin)
+    Line(std::string& line, bool wasOnBlockBegin = false) : wasOnBlockBegin(wasOnBlockBegin)
     {
         size_t startPos, endPos = 0;
 
-        while ((startPos = line.find_first_not_of(wpF, endPos)) != string::npos)
+        while ((startPos = line.find_first_not_of(wpF, endPos)) != std::string::npos)
         {
             if (line.at(startPos) == '"')
             {
                 size_t closeQuote = line.find_first_of('"', startPos + 1);
-                endPos = (closeQuote != string::npos) ? closeQuote + 1 : line.size();
+                endPos = (closeQuote != std::string::npos) ? closeQuote + 1 : line.size();
             }
             else
             {
                 endPos = line.find_first_of(wpF, startPos + 1);
             }
 
-            string t = line.substr(startPos, endPos - startPos);
+            std::string t = line.substr(startPos, endPos - startPos);
 
             if (!t.length())
                 continue;
@@ -339,37 +317,35 @@ struct Line
             {
                 size_t strStartPos = t.find_first_of('\"');
                 size_t strEndPos = t.find_last_of('\"');
-                if ((strStartPos == string::npos) || (strEndPos == string::npos))
-                    cout << "Not a valid string:" << t << endl;
-                else
+                if ((strStartPos != std::string::npos) && (strEndPos != std::string::npos))
                 {
-                    string toAdd = t.substr(strStartPos, strEndPos - strStartPos + 1);
-                    toAdd.erase(remove(toAdd.begin(), toAdd.end(), '\"'), toAdd.end());
-                    _line_items.push_back(make_unique<LineItem>(LineItem::String, toAdd));
+                    std::string toAdd = t.substr(strStartPos, strEndPos - strStartPos + 1);
+                    toAdd.erase(std::remove(toAdd.begin(), toAdd.end(), '\"'), toAdd.end());
+                    _line_items.push_back(std::make_unique<LineItem>(LineItem::String, toAdd));
                 }
             }
             else if (isHex(t))
             {
-                _line_items.push_back(make_unique<LineItem>(LineItem::Hex, t));
+                _line_items.push_back(std::make_unique<LineItem>(LineItem::Hex, t));
             }
             else if (isFloat(t))
             {
-                _line_items.push_back(make_unique<LineItem>(LineItem::Float, t));
+                _line_items.push_back(std::make_unique<LineItem>(LineItem::Float, t));
             }
             else if (isDecimal(t))
             {
-                _line_items.push_back(make_unique<LineItem>(LineItem::Decimal, t));
+                _line_items.push_back(std::make_unique<LineItem>(LineItem::Decimal, t));
             }
             else
             {
-                _line_items.push_back(make_unique<LineItem>(LineItem::Identifier, t));
+                _line_items.push_back(std::make_unique<LineItem>(LineItem::Identifier, t));
             }
         }
         if( _line_items.size() )
             _line_items.back()->_next = invli(); /* the last item is always linked to the static invalid LineItem */
     }
 
-    void write(ofstream& o)
+    void write(std::ofstream& o)
     {
         auto pos = _line_items.begin();
 
@@ -389,7 +365,7 @@ struct Line
         {
             (*pos)->print();
             ++pos;
-            if (pos != _line_items.end()) cout << " ";
+            if (pos != _line_items.end()) std::cout << " ";
         }
     }
 
@@ -401,14 +377,14 @@ struct Line
     }
 
     bool wasOnBlockBegin;
-    vector<unique_ptr<LineItem>> _line_items;
+    std::vector<std::unique_ptr<LineItem>> _line_items;
 };
 
 struct Block
 {
     Block(Block* parent) { _parent = parent; }
 
-    void addChild(unique_ptr<Block> b) { _children.push_back(std::move(b)); }
+    void addChild(std::unique_ptr<Block> b) { _children.push_back(std::move(b)); }
 
     Block* parent() { return _parent; }
 
@@ -419,7 +395,7 @@ struct Block
         return Line::invli();
     }
 
-    std::vector<LineItem*> lisByTxts(set<string>& s)
+    std::vector<LineItem*> lisByTxts(std::set<std::string>& s)
     {
         std::vector<LineItem*> lis;
         for (const auto& li : this->_line_items)
@@ -432,9 +408,9 @@ struct Block
         return lis;
     }
 
-    vector<LineItem*> lisByTxtAndType(string name, LineItem::Type type)
+    std::vector<LineItem*> lisByTxtAndType(std::string name, LineItem::Type type)
     {
-        vector<LineItem*> ret;
+        std::vector<LineItem*> ret;
         for (auto& li : this->_line_items)
         {
             if ((li->toText() == name) && (li->_type == type))
@@ -445,9 +421,9 @@ struct Block
         return ret;
     }
 
-    vector<LineItem*> lisByTxtsAndType( set<string>& s, LineItem::Type type)
+    std::vector<LineItem*> lisByTxtsAndType( std::set<std::string>& s, LineItem::Type type)
     {
-        vector<LineItem*> ret;
+        std::vector<LineItem*> ret;
         for (const auto& li : this->_line_items)
         {
             if ( ( s.find(li->toText() ) != s.end() ) && (li->_type == type) )
@@ -458,7 +434,7 @@ struct Block
         return ret;
     }
 
-    LineItem* liByIdent(string name)
+    LineItem* liByIdent(std::string name)
     {
         for (auto& li : this->_line_items)
         {
@@ -471,7 +447,7 @@ struct Block
     }
 
     /* Returns the next item (right) to the line item with the name */
-    LineItem* liByIdentNxt(string name)
+    LineItem* liByIdentNxt(std::string name)
     {
         LineItem* li = liByIdent(name);
         return li->_next;
@@ -482,15 +458,15 @@ struct Block
         return (this->_line_items.size() ) ? this->_line_items.at(0) : Line::invli();
     }
 
-    Block* childBlockByName(string name)
+    Block* childBlockByName(std::string name)
     {
         const auto itr = _children_lookup.find(name);
         return (itr != _children_lookup.end()) ? itr->second : nullptr;
     }
 
-    vector<Block*> childBlocksByName(string name)
+    std::vector<Block*> childBlocksByName(std::string name)
     {
-        vector<Block*> ret;
+        std::vector<Block*> ret;
         for (auto [itr, rangeEnd] = _children_lookup.equal_range(name); itr != rangeEnd; ++itr)
         {
             ret.push_back(itr->second);
@@ -498,12 +474,12 @@ struct Block
         return ret;
     }
 
-    vector<Block*> childBlocksByNames(vector<string> names)
+    std::vector<Block*> childBlocksByNames(std::vector<std::string> names)
     {
-        vector<Block*> ret;
+        std::vector<Block*> ret;
         for (const auto& name : names)
         {
-            vector<Block*> t = childBlocksByName(name);
+            std::vector<Block*> t = childBlocksByName(name);
             ret.insert(ret.end(), t.begin(), t.end());
         }
         return ret;
@@ -512,19 +488,19 @@ struct Block
     void print(int depth = 0)
     {
         printTabs(depth);
-        cout << _name << "{BLOCK_BEGIN}" << endl;
+        std::cout << _name << "{BLOCK_BEGIN}" << std::endl;
         for (auto& l : _lines)
         {
             printTabs(depth + 1);
             l->print();
-            cout << endl;
+            std::cout << std::endl;
         }
         for (auto& c : _children)
         {
             c->print(depth + 1);
         }
         printTabs(depth);
-        cout << _name << "{BLOCK_END}" << endl;
+        std::cout << _name << "{BLOCK_END}" << std::endl;
     }
 
     void write(int depth, std::ofstream& o)
@@ -539,18 +515,18 @@ struct Block
             }
             l->write(o);
         }
-        o << endl;
+        o << std::endl;
         for (auto& c : _children)
         {
             c->write(depth + 1, o);
         }
-        o << "/end " << _name << endl << endl;
+        o << "/end " << _name << std::endl << std::endl;
     }
 
     void parse()
     {
-        string firstLine;
-        getline(ss, firstLine);
+        std::string firstLine;
+        std::getline(ss, firstLine);
         parseFirstLineBlkName(firstLine);
 
         if ( ignoredBlockNames.find(_name) != ignoredBlockNames.end() )
@@ -561,25 +537,25 @@ struct Block
             /* Still register in parent lookup so childBlockByName works. */
             if (_parent != nullptr)
             {
-                _parent->_children_lookup.insert(pair<string, Block*>(_name, this));
+                _parent->_children_lookup.insert(std::pair<std::string, Block*>(_name, this));
             }
             return;
         }
 
         if (!shouldSkipShortOrWpLine(firstLine))
         {
-            _lines.push_back(make_unique<Line>(firstLine, true));
+            _lines.push_back(std::make_unique<Line>(firstLine, true));
         }
-        string line;
-        while (getline(ss, line))
+        std::string line;
+        while (std::getline(ss, line))
         {
-            _lines.push_back(make_unique<Line>(line));
+            _lines.push_back(std::make_unique<Line>(line));
         }
 
         /* Register Block in parents map*/
         if (_parent != nullptr)
         {
-            _parent->_children_lookup.insert(pair<string, Block*>(_name, this));
+            _parent->_children_lookup.insert(std::pair<std::string, Block*>(_name, this));
         }
 
         /* Register line elements in a single list */
@@ -595,29 +571,29 @@ struct Block
         }
     }
 
-    stringstream ss;
-    string _name;
-    string _raw_content; // Raw text for blacklisted blocks (e.g. A2ML).
+    std::stringstream ss;
+    std::string _name;
+    std::string _raw_content; // Raw text for blacklisted blocks (e.g. A2ML).
 
     Block* _parent;
-    vector<unique_ptr<Block>> _children;
-    vector<unique_ptr<Line>> _lines;
+    std::vector<std::unique_ptr<Block>> _children;
+    std::vector<std::unique_ptr<Line>> _lines;
 
-    vector<LineItem*> _line_items;
-    multimap<string, Block*> _children_lookup;
+    std::vector<LineItem*> _line_items;
+    std::multimap<std::string, Block*> _children_lookup;
 
   private:
-    bool parseFirstLineBlkName(string& firstLineOfBlock)
+    bool parseFirstLineBlkName(std::string& firstLineOfBlock)
     {
         size_t startPos = firstLineOfBlock.find_first_not_of(wpF);
-        if (startPos == string::npos) return false;
+        if (startPos == std::string::npos) return false;
         size_t endPos = firstLineOfBlock.find_first_of(wpF, startPos);
-        if (endPos == string::npos)
+        if (endPos == std::string::npos)
             endPos = firstLineOfBlock.size() - 1;
         else
             endPos -= 1;
 
-        _name = string(&firstLineOfBlock[startPos], &firstLineOfBlock[endPos + 1]);
+        _name = std::string(&firstLineOfBlock[startPos], &firstLineOfBlock[endPos + 1]);
 
         firstLineOfBlock.erase(0, endPos + 1);
         return true;
@@ -626,14 +602,14 @@ struct Block
 
 struct A2lFile
 {
-    unique_ptr<Line> ASAP2_VERSION;
-    unique_ptr<Block> PROJECT;
+    std::unique_ptr<Line> ASAP2_VERSION;
+    std::unique_ptr<Block> PROJECT;
 
     void print()
     {
         PROJECT->print();
     }
-    void write(ofstream& o)
+    void write(std::ofstream& o)
     {
         PROJECT->write(0, o);
     }
@@ -659,12 +635,12 @@ struct A2lFile
 
 struct Writer
 {
-    static bool writeA2lFile(string path, A2lFile* file)
+    static bool writeA2lFile(std::string path, A2lFile* file)
     {
         if (file->PROJECT == nullptr)
             return false;
 
-        ofstream ofile(path);
+        std::ofstream ofile(path);
         if (!ofile.is_open())
             return false;
 
@@ -679,34 +655,34 @@ struct Writer
 
 struct Loader
 {
-    static unique_ptr<A2lFile> readA2lFile(string path)
+    static std::unique_ptr<A2lFile> readA2lFile(std::string path)
     {
-        ifstream infile(path);
+        std::ifstream infile(path);
 
         if (!infile.is_open())
             return nullptr;
 
-        string line;
+        std::string line;
         uint64_t blockDepth = 0;
 
-        auto af = make_unique<A2lFile>();
-        unique_ptr<Block> mainBlock;
+        auto af = std::make_unique<A2lFile>();
+        std::unique_ptr<Block> mainBlock;
         Block* currentBlock = nullptr;
 
         uint64_t lineCount = 0;
         size_t length; /* could be removed - debug only */
-        string toAdd;  /* could be removed - debug only */
+        std::string toAdd;  /* could be removed - debug only */
 
-        while (getline(infile, line))
+        while (std::getline(infile, line))
         {
             lineCount++;
             size_t pos = 0;
             size_t endPos = 0;
 
             /* Purge comments on the fly: block comments first, then line comments */
-            if ((pos = line.find(commentBegin)) != string::npos)
+            if ((pos = line.find(commentBegin)) != std::string::npos)
             {
-                if ((endPos = line.find(commentEnd)) != string::npos)
+                if ((endPos = line.find(commentEnd)) != std::string::npos)
                 {
                     /* single line comment */
                     length = endPos + commentEnd.length() - pos;
@@ -715,12 +691,12 @@ struct Loader
                 else
                 {
                     /* in multi line comment */
-                    while (getline(infile, line))
+                    while (std::getline(infile, line))
                     {
                         lineCount++;
-                        if ((pos = line.find_first_not_of(wpF)) != string::npos)
+                        if ((pos = line.find_first_not_of(wpF)) != std::string::npos)
                         {
-                            if ((endPos = line.find(commentEnd)) != string::npos)
+                            if ((endPos = line.find(commentEnd)) != std::string::npos)
                             {
                                 /* comment end found */
                                 break;
@@ -740,7 +716,7 @@ struct Loader
                Only strip if // is not inside a quoted string. */
             {
                 size_t lcPos = line.find(lineComment);
-                if (lcPos != string::npos)
+                if (lcPos != std::string::npos)
                 {
                     size_t quotesBefore = 0;
                     for (size_t i = 0; i < lcPos; i++)
@@ -749,20 +725,20 @@ struct Loader
                     if (quotesBefore % 2 == 0)
                     {
                         line.erase(lcPos);
-                        if (line.find_first_not_of(wpF) == string::npos)
+                        if (line.find_first_not_of(wpF) == std::string::npos)
                             continue;
                     }
                 }
             }
 
             /* Multi line strings will be merged to a single line for parsing.. */
-            if ((pos = line.find_first_of('\"')) != string::npos)
+            if ((pos = line.find_first_of('\"')) != std::string::npos)
             {
                 /* there is a string in this line */
                 while (pos == line.find_last_of('\"'))
                 {
-                    string t;
-                    if (getline(infile, t))
+                    std::string t;
+                    if (std::getline(infile, t))
                     {
                         lineCount++;
                         line += t;
@@ -782,37 +758,37 @@ struct Loader
 
             if (mainBlock == nullptr)
             {
-                if ((pos = line.find(asap2ver)) != string::npos)
+                if ((pos = line.find(asap2ver)) != std::string::npos)
                 {
-                    af->ASAP2_VERSION = make_unique<Line>( line );
+                    af->ASAP2_VERSION = std::make_unique<Line>( line );
                 }
 
-                if ((pos = line.find(blockBegin)) != string::npos)
+                if ((pos = line.find(blockBegin)) != std::string::npos)
                 {
                     blockDepth++;
-                    mainBlock = make_unique<Block>(nullptr);
+                    mainBlock = std::make_unique<Block>(nullptr);
                     currentBlock = mainBlock.get();
                     pos += blockBegin.length();
                     currentBlock->ss << line.substr(pos, line.size() - pos)
-                                     << endl;
+                                     << std::endl;
                 }
             }
             else
             {
-                if ((pos = line.find(blockBegin)) != string::npos)
+                if ((pos = line.find(blockBegin)) != std::string::npos)
                 {
                     blockDepth++;
-                    auto tBlock = make_unique<Block>(currentBlock);
+                    auto tBlock = std::make_unique<Block>(currentBlock);
                     Block* tBlockRaw = tBlock.get();
                     currentBlock->addChild(std::move(tBlock));
                     currentBlock = tBlockRaw;
                     pos += blockBegin.length();
-                    if ((endPos = line.find(blockEnd)) != string::npos)
+                    if ((endPos = line.find(blockEnd)) != std::string::npos)
                     {
                         /* Special case -> Block begin and end in the same line.. */
                         length = line.length() - pos - (line.length() - endPos);
                         toAdd = line.substr(pos, length);
-                        currentBlock->ss << toAdd << endl;
+                        currentBlock->ss << toAdd << std::endl;
                         blockDepth--;
                         currentBlock->parse();
                         currentBlock = currentBlock->parent();
@@ -821,10 +797,10 @@ struct Loader
                     {
                         /* Normal case -> only block begin in this line..  */
                         toAdd = line.substr(pos, line.size() - pos);
-                        currentBlock->ss << toAdd << endl;
+                        currentBlock->ss << toAdd << std::endl;
                     }
                 }
-                else if ((pos = line.find(blockEnd)) != string::npos)
+                else if ((pos = line.find(blockEnd)) != std::string::npos)
                 {
                     blockDepth--;
                     currentBlock->parse();
@@ -844,11 +820,10 @@ struct Loader
                 }
                 else
                 {
-                    currentBlock->ss << line << endl;
+                    currentBlock->ss << line << std::endl;
                 }
             }
         }
-        cout << "Finished with lineCount: " << lineCount << endl;
         af->PROJECT = std::move(mainBlock);
         return af;
     }

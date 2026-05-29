@@ -95,6 +95,7 @@ message ModPar {
   optional string supplier     = 4;
   optional string cpu_type     = 5;
   optional int64  ecu_calibration_offset = 6;
+  optional string epk          = 7;  // EPROM identifier (EPK keyword).
 
   repeated SystemConstant  system_constants = 10;
   repeated MemorySegment   memory_segments  = 11;
