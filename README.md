@@ -46,15 +46,15 @@ cmake --build build
 
 | Directory | Description |
 |-----------|-------------|
-| `include/` | Public C++ headers (`a2lfile.h`, `extract.h`, enum headers) |
+| `include/` | Public C++ headers (`a2l/a2lfile.h`, `a2l/extract.h`, enum headers) |
 | `proto/` | Protobuf schema files (`.proto`) for multi-language binding generation |
 | `examples/` | Example applications (basic summary, JSON export) |
 
 ## Integration
 
 ```cpp
-#include "a2lfile.h"
-#include "extract.h"
+#include "a2l/a2lfile.h"
+#include "a2l/extract.h"
 
 auto file = a2lfile::Loader::readA2lFile("path/to/file.a2l");
 a2l::A2lFile result = a2l::extract::extractFile(file.get());
