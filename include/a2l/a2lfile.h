@@ -42,8 +42,6 @@ inline const std::string lineComment = "//";
 inline const std::vector<char> decimalChars = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '-'}; /* dot . is not included */
 inline const std::string decimalF = std::string(decimalChars.begin(), decimalChars.end());
 
-inline const std::string notAllowedInFloatF = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"; /* toDo Float might use this notation 12E-2.*/
-
 inline const std::vector<char> wpChars = {0x09 /*HT*/, 0x0A /*LF/NL*/, 0x0B /*VT*/, 0x0C /*FF/NP*/, 0x0D /*CR*/, 0x20 /*SPC*/};
 inline const std::string wpF = std::string(wpChars.begin(), wpChars.end());
 
@@ -57,20 +55,44 @@ inline bool isHex(std::string& str)
     return str.find("0x") != std::string::npos;
 }
 
-/* toDo 1E-6 etc.. */
+/* Accept decimal floats and scientific notation (1.5, -1e24, 2.5e-003, 1E-6).
+   A float must contain a '.' or an exponent; pure integers stay Decimal.
+   Grammar: [sign] digits [ '.' digits ] [ ('e'|'E') [sign] digits ].
+   Either a fractional part or an exponent is required; a leading digit run
+   is required (".5" and "E5" are rejected as malformed). */
 inline bool isFloat(std::string& str)
 {
-    if (str.find('.') == std::string::npos) return false;
+    size_t i = 0;
+    const size_t n = str.size();
+    if (n == 0) return false;
 
-    if (str.find_first_of(decimalF) == std::string::npos) return false;
+    if (str[i] == '+' || str[i] == '-') i++;
 
-    std::string t;
+    size_t intDigits = 0;
+    while (i < n && std::isdigit(static_cast<unsigned char>(str[i]))) { i++; intDigits++; }
+    if (intDigits == 0) return false;
 
-    for (auto& c : str) t.push_back(static_cast<char>(std::toupper(static_cast<unsigned char>(c))));
+    bool hasFraction = false;
+    if (i < n && str[i] == '.')
+    {
+        i++;
+        hasFraction = true;
+        while (i < n && std::isdigit(static_cast<unsigned char>(str[i]))) i++;
+    }
 
-    if (t.find_first_of(notAllowedInFloatF) != std::string::npos) return false;
+    bool hasExponent = false;
+    if (i < n && (str[i] == 'e' || str[i] == 'E'))
+    {
+        i++;
+        hasExponent = true;
+        if (i < n && (str[i] == '+' || str[i] == '-')) i++;
+        size_t expDigits = 0;
+        while (i < n && std::isdigit(static_cast<unsigned char>(str[i]))) { i++; expDigits++; }
+        if (expDigits == 0) return false; /* malformed: "1E", "1e-" */
+    }
 
-    return true;
+    if (i != n) return false;            /* trailing junk */
+    return hasFraction || hasExponent;   /* a bare integer is Decimal, not Float */
 }
 
 inline bool isDecimal(std::string& str)
@@ -100,13 +122,13 @@ struct LineItem
         Decimal,  /* MCD */
         Hex,  /* MCD */
         Float,  /* MCD */
-        Identifier, /* MCD -  not quoted text - ie Keywords */
-        Any /* Added for convinience toDo updateFunctions to use it.. */
+        Identifier /* MCD -  not quoted text - ie Keywords */
     };
 
     static std::string itemTypeToTxt(Type t)
     {
-        const std::array<std::string, Identifier + 1> typeNames = {"String", "Decimal", "Hex", "Float", "Identifier"};
+        const std::array<std::string, Identifier + 1> typeNames =
+            {"Invalid", "String", "Decimal", "Hex", "Float", "Identifier"};
         return typeNames[static_cast<int>(t)];
     }
 
@@ -211,30 +233,30 @@ struct LineItem
         }
     }
 
-    void print()
+    void print(std::ostream& o = std::cout)
     {
-        std::cout << _txt << "{" << itemTypeToTxt(_type) << "}"
+        o << _txt << "{" << itemTypeToTxt(_type) << "}"
              << "[";
         switch (_type)
         {
             case String:
             case Identifier:
-                std::cout << "-";
+                o << "-";
                 break;
             case Hex:
-                std::cout << toUnsigned();
+                o << toUnsigned();
                 break;
             case Decimal:
-                std::cout << toSigned();
+                o << toSigned();
                 break;
             case Float:
-                std::cout << std::stold(_txt);
+                o << std::stold(_txt);
                 break;
             default:
-                std::cout << "?";
+                o << "?";
                 break;
         }
-        std::cout << "]";
+        o << "]";
     }
 
 
@@ -357,15 +379,15 @@ struct Line
         }
     }
 
-    void print()
+    void print(std::ostream& o = std::cout)
     {
         auto pos = _line_items.begin();
 
         while (pos != _line_items.end())
         {
-            (*pos)->print();
+            (*pos)->print(o);
             ++pos;
-            if (pos != _line_items.end()) std::cout << " ";
+            if (pos != _line_items.end()) o << " ";
         }
     }
 
@@ -485,22 +507,22 @@ struct Block
         return ret;
     }
 
-    void print(int depth = 0)
+    void print(int depth = 0, std::ostream& o = std::cout)
     {
-        printTabs(depth);
-        std::cout << _name << "{BLOCK_BEGIN}" << std::endl;
+        printTabs(depth, o);
+        o << _name << "{BLOCK_BEGIN}" << std::endl;
         for (auto& l : _lines)
         {
-            printTabs(depth + 1);
-            l->print();
-            std::cout << std::endl;
+            printTabs(depth + 1, o);
+            l->print(o);
+            o << std::endl;
         }
         for (auto& c : _children)
         {
-            c->print(depth + 1);
+            c->print(depth + 1, o);
         }
-        printTabs(depth);
-        std::cout << _name << "{BLOCK_END}" << std::endl;
+        printTabs(depth, o);
+        o << _name << "{BLOCK_END}" << std::endl;
     }
 
     void write(int depth, std::ofstream& o)
@@ -605,9 +627,9 @@ struct A2lFile
     std::unique_ptr<Line> ASAP2_VERSION;
     std::unique_ptr<Block> PROJECT;
 
-    void print()
+    void print(std::ostream& o = std::cout)
     {
-        PROJECT->print();
+        PROJECT->print(0, o);
     }
     void write(std::ofstream& o)
     {

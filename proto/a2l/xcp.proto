@@ -48,8 +48,9 @@ enum DaqOptimisationType {
 enum DaqAddressExtensionMode {
   DAQ_ADDRESS_EXTENSION_MODE_UNSPECIFIED     = 0;
   DAQ_ADDRESS_EXTENSION_MODE_FREE            = 1;
-  DAQ_ADDRESS_EXTENSION_MODE_SAME            = 2;
-  DAQ_ADDRESS_EXTENSION_MODE_OPTIMIZED       = 3;
+  DAQ_ADDRESS_EXTENSION_MODE_DAQ             = 2;
+  DAQ_ADDRESS_EXTENSION_MODE_SAME            = 3;
+  DAQ_ADDRESS_EXTENSION_MODE_OPTIMIZED       = 4;
 }
 
 // PID identification field type.
@@ -125,6 +126,35 @@ enum SampleRate {
   SAMPLE_RATE_TRIPLE      = 2;
 }
 
+// DAQ list / event-channel direction.
+// Source: docs/spec_corpus/spec_cards/xcp_daq.md (DAQ_LIST_TYPE / EVENT)
+enum DaqListType {
+  DAQ_LIST_TYPE_UNSPECIFIED = 0;
+  DAQ_LIST_TYPE_DAQ         = 1;
+  DAQ_LIST_TYPE_STIM        = 2;
+  DAQ_LIST_TYPE_DAQ_STIM    = 3;
+}
+
+// Event-channel consistency scope.
+// Source: docs/spec_corpus/spec_cards/xcp_daq.md (EVENT CONSISTENCY)
+enum DaqConsistency {
+  DAQ_CONSISTENCY_UNSPECIFIED = 0;
+  DAQ_CONSISTENCY_DAQ         = 1;
+  DAQ_CONSISTENCY_EVENT       = 2;
+  DAQ_CONSISTENCY_ODT         = 3;
+  DAQ_CONSISTENCY_NONE        = 4;
+}
+
+// Ethernet packet alignment (bytes).
+// Source: docs/spec_corpus/spec_cards/xcp_on_ethernet.md (PACKET_ALIGNMENT)
+enum PacketAlignment {
+  PACKET_ALIGNMENT_UNSPECIFIED = 0;
+  PACKET_ALIGNMENT_8           = 1;
+  PACKET_ALIGNMENT_16          = 2;
+  PACKET_ALIGNMENT_32          = 3;
+  PACKET_ALIGNMENT_64          = 4;
+}
+
 // ===========================================================================
 // IF_DATA XCP / XCPplus top-level container.
 // Source: docs/spec_corpus/spec_cards/if_data_xcp.md
@@ -176,9 +206,13 @@ message XcpProtocolLayer {
   repeated uint32 optional_cmds        = 20;  // command codes
   repeated uint32 optional_level1_cmds = 21;
 
-  optional uint32 communication_mode_supported = 22;
+  reserved 22;  // was uint32 communication_mode_supported
+
   optional string seed_and_key_external_function = 23;
   optional uint32 max_dto_stim = 24;
+
+  // Presence flag: COMMUNICATION_MODE_SUPPORTED keyword present.
+  optional bool communication_mode_supported = 25;
 }
 
 // ===========================================================================
@@ -202,6 +236,7 @@ message XcpDaq {
   optional bool prescaler_supported  = 20;
   optional bool resume_supported     = 21;
   optional bool store_daq_supported  = 22;
+  optional bool pid_off_supported    = 23;  // PID_OFF_SUPPORTED presence flag
 
   // STIM parameters.
   optional XcpDaqStim stim = 25;
@@ -238,11 +273,12 @@ message XcpTimestampSupported {
 // Predefined DAQ list (STATIC configuration).
 message XcpDaqList {
   uint32 daq_list_number = 1;
-  uint32 daq_list_type   = 2;
+  reserved 2;  // was uint32 daq_list_type
   uint32 max_odt         = 3;
   uint32 max_odt_entries = 4;
   optional uint32 first_pid = 5;
   optional uint32 event_fixed = 6;
+  DaqListType daq_list_type = 7;
 }
 
 // EVENT channel definition.
@@ -252,12 +288,14 @@ message XcpDaqEventChannel {
   string name                  = 1;
   string short_name            = 2;
   uint32 event_channel_number  = 3;
-  uint32 daq_list_type         = 4;
+  reserved 4;  // was uint32 daq_list_type
   uint32 max_daq_list          = 5;
   uint32 time_cycle            = 6;
   uint32 time_unit             = 7;
   uint32 priority              = 8;
-  optional uint32 consistency  = 9;
+  reserved 9;  // was uint32 consistency
+  DaqListType    daq_list_type = 10;
+  DaqConsistency consistency   = 11;
 }
 
 // DAQ memory consumption parameters.
@@ -385,7 +423,7 @@ message XcpOnIp {
   // Operational limits.
   optional uint32 max_bus_load   = 20;
   optional uint32 max_bit_rate   = 21;
-  optional uint32 packet_alignment = 22;
+  reserved 22;  // was uint32 packet_alignment
 
   // Optional transport-layer sub-commands.
   repeated uint32 optional_tl_subcmds = 25;
@@ -394,6 +432,8 @@ message XcpOnIp {
   optional XcpProtocolLayer protocol_layer = 30;
   optional XcpDaq           daq            = 31;
   optional string           transport_layer_instance = 32;
+
+  optional PacketAlignment packet_alignment = 33;
 }
 
 // ===========================================================================

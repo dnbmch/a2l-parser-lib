@@ -204,3 +204,23 @@ enum VarNaming {
   VAR_NAMING_UNSPECIFIED = 0;
   VAR_NAMING_NUMERIC     = 1;
 }
+
+// ---------------------------------------------------------------------------
+// Extraction diagnostic severity.
+// Emitted only on lossy or guessed extraction events (numeric token failed
+// to convert, value out of enum range, whole record/section skipped).
+// Losslessly-preserved unknown blocks (raw fallbacks) never emit diagnostics.
+// ---------------------------------------------------------------------------
+enum Severity {
+  SEVERITY_UNSPECIFIED = 0;
+  WARNING              = 1;  // value defaulted / truncated / out of enum range
+  DROPPED              = 2;  // whole record or section skipped
+}
+
+// One extraction diagnostic. location is best-available context
+// (section path / block name); message is human-readable.
+message Diagnostic {
+  string   location = 1;
+  string   message  = 2;
+  Severity severity = 3;
+}

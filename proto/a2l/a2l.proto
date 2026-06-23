@@ -22,6 +22,12 @@ message A2lFile {
 
   optional uint32 asap2_version_major = 5;
   optional uint32 asap2_version_minor = 6;
+
+  // Extraction diagnostics (lossy/guessed events only).
+  repeated Diagnostic diagnostics = 7;
+
+  // Extraction contract version (currently 1).
+  uint32 schema_version = 8;
 }
 
 // ===========================================================================

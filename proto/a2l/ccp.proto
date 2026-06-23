@@ -94,10 +94,14 @@ message IfDataCcp {
   // Measurement-level KP_BLOB (inline).
   optional CcpKpBlob kp_blob = 10;
 
+  // Characteristic/AXIS_PTS-level DP_BLOB (inline, typed).
+  optional CcpDpBlob dp_blob = 11;
+
   // Raw fallback for deferred blocks.
   optional string seed_key_raw    = 20;
   optional string checksum_raw    = 21;
-  optional string dp_blob_raw     = 22;
+  reserved 22;
+  reserved "dp_blob_raw";
   optional string addr_mapping_raw = 23;
 
   // Catch-all for unsupported vendor extensions.
@@ -249,4 +253,15 @@ message CcpKpBlob {
   uint64 address           = 2;
   uint32 size              = 3;
   repeated uint32 raster_ids = 4;
+}
+
+// ===========================================================================
+// DP_BLOB - characteristic/AXIS_PTS-level calibration placement descriptor.
+// Source: docs/spec_corpus/raw/ccp_v2_6_aml/ccp_v2_6.aml (DP_BLOB struct)
+//         docs/spec_corpus/examples/if_data_ccp_kp_dp_blob_minimal.a2l
+// ===========================================================================
+message CcpDpBlob {
+  uint32 address_extension = 1;
+  uint64 address           = 2;
+  uint32 size              = 3;
 }

@@ -80,6 +80,15 @@ enum RecordLayoutStaticFlag {
   RECORD_LAYOUT_STATIC_FLAG_STATIC_RECORD_LAYOUT    = 2;
 }
 
+// Word length of a RESERVED skip element.
+// Only BYTE, WORD and LONG are valid datasize values per ASAP2 4.7.127.
+enum RecordLayoutDataSize {
+  RECORD_LAYOUT_DATA_SIZE_UNSPECIFIED = 0;
+  RECORD_LAYOUT_DATA_SIZE_BYTE        = 1;
+  RECORD_LAYOUT_DATA_SIZE_WORD        = 2;
+  RECORD_LAYOUT_DATA_SIZE_LONG        = 3;
+}
+
 // ===========================================================================
 // RECORD_LAYOUT core.
 // Source: docs/spec_corpus/spec_cards/record_layout.md
@@ -105,6 +114,7 @@ message RecordLayoutComponent {
     RecordLayoutAxisOperand axis_operand = 9;
     RecordLayoutAddressReference address_reference = 10;
     RecordLayoutStaticFlagMarker static_flag = 11;
+    RecordLayoutReserved reserved = 12;
 
     // Fallback for lower-priority or not-yet-typed component lines.
     string raw_component = 20;
@@ -178,4 +188,11 @@ message RecordLayoutAddressReference {
 
 message RecordLayoutStaticFlagMarker {
   RecordLayoutStaticFlag flag = 1;
+}
+
+// RESERVED Position DataSize -- skip element not interpreted by the MC system.
+// Source: ASAP2 1.7.1 section 4.7.127.
+message RecordLayoutReserved {
+  uint32               position  = 1;
+  RecordLayoutDataSize data_size = 2;
 }

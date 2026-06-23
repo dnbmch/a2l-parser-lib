@@ -20,6 +20,16 @@ namespace a2l::extract {
 
 a2l::A2lFile extractFile(a2lfile::A2lFile* file);
 
+// ===== Diagnostics accumulator =====
+// Lossy/guessed extraction events are recorded here by the central numeric
+// helpers and record-skip sites, then drained into A2lFile.diagnostics by
+// extractFile(). Losslessly-preserved unknown blocks never emit.
+
+void clearDiagnostics();
+void recordDiagnostic(a2l::Severity severity, const std::string& location,
+                      const std::string& message);
+const std::vector<a2l::Diagnostic>& takeDiagnostics();
+
 // ===== Per-concept extraction (module.cpp) =====
 
 a2l::Module extractModule(a2lfile::Block* block);
@@ -133,6 +143,9 @@ a2l::TimestampSize xcpTimestampSizeFromStr(const std::string& s);
 a2l::TimestampUnit xcpTimestampUnitFromStr(const std::string& s);
 a2l::ChecksumType xcpChecksumTypeFromStr(const std::string& s);
 a2l::SampleRate xcpSampleRateFromStr(const std::string& s);
+a2l::DaqListType xcpDaqListTypeFromStr(const std::string& s);
+a2l::DaqConsistency xcpDaqConsistencyFromStr(const std::string& s);
+a2l::PacketAlignment xcpPacketAlignmentFromStr(const std::string& s);
 
 // CCP-specific enums
 a2l::CcpDaqMode ccpDaqModeFromStr(const std::string& s);
@@ -148,6 +161,7 @@ a2l::RecordLayoutAxis recordLayoutAxisFromStr(const std::string& s);
 a2l::RecordLayoutAlignmentType recordLayoutAlignmentTypeFromStr(const std::string& s);
 a2l::RecordLayoutAddressType recordLayoutAddressTypeFromStr(const std::string& s);
 a2l::RecordLayoutIndexMode recordLayoutIndexModeFromStr(const std::string& s);
+a2l::RecordLayoutDataSize recordLayoutDataSizeFromStr(const std::string& s);
 
 // ===== Block-reading helpers =====
 
