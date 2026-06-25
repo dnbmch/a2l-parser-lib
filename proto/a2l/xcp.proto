@@ -43,14 +43,13 @@ enum DaqOptimisationType {
   DAQ_OPTIMISATION_TYPE_MAX_ENTRY_SIZE        = 6;
 }
 
-// DAQ address extension mode.
+// DAQ address extension mode. ASAM XCP common AML defines FREE / ODT / DAQ.
 // Source: docs/spec_corpus/spec_cards/xcp_daq.md
 enum DaqAddressExtensionMode {
-  DAQ_ADDRESS_EXTENSION_MODE_UNSPECIFIED     = 0;
-  DAQ_ADDRESS_EXTENSION_MODE_FREE            = 1;
-  DAQ_ADDRESS_EXTENSION_MODE_DAQ             = 2;
-  DAQ_ADDRESS_EXTENSION_MODE_SAME            = 3;
-  DAQ_ADDRESS_EXTENSION_MODE_OPTIMIZED       = 4;
+  DAQ_ADDRESS_EXTENSION_MODE_UNSPECIFIED = 0;
+  DAQ_ADDRESS_EXTENSION_MODE_FREE        = 1;
+  DAQ_ADDRESS_EXTENSION_MODE_ODT         = 2;
+  DAQ_ADDRESS_EXTENSION_MODE_DAQ         = 3;
 }
 
 // PID identification field type.
@@ -211,8 +210,27 @@ message XcpProtocolLayer {
   optional string seed_and_key_external_function = 23;
   optional uint32 max_dto_stim = 24;
 
-  // Presence flag: COMMUNICATION_MODE_SUPPORTED keyword present.
-  optional bool communication_mode_supported = 25;
+  // COMMUNICATION_MODE_SUPPORTED (BLOCK / INTERLEAVED). Presence via has_*.
+  optional XcpCommunicationModeSupported communication_mode_supported = 25;
+}
+
+// COMMUNICATION_MODE_SUPPORTED body (XCP common AML taggedunion): either BLOCK
+// transfer mode (optional SLAVE flag, optional MASTER with MAX_BS / MIN_ST) or
+// INTERLEAVED mode (queue size). A bare keyword sets neither arm; presence is
+// carried by has_communication_mode_supported().
+message XcpCommunicationModeSupported {
+  message Block {
+    message Master {
+      uint32 max_bs = 1;
+      uint32 min_st = 2;
+    }
+    bool            slave  = 1;
+    optional Master master = 2;
+  }
+  oneof mode {
+    Block  block                  = 1;
+    uint32 interleaved_queue_size = 2;
+  }
 }
 
 // ===========================================================================
