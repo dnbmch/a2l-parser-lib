@@ -32,7 +32,7 @@ cd a2l-parser-lib
 # 2. Download and extract the prebuilt library for your platform
 #    (from the Releases page, extract into lib/)
 mkdir -p lib
-tar xzf a2lparser-x86_64-linux-gnu-v0.3.0.tar.gz -C lib/
+tar xzf a2lparser-x86_64-linux-gnu-v0.4.0.tar.gz -C lib/
 
 # 3. Build the examples
 cmake -B build -DA2L_LIB_DIR=lib
