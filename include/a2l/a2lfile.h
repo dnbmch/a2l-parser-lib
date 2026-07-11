@@ -14,18 +14,15 @@
 #define A2LFILE_H
 
 #include <algorithm>
-#include <array>
 #include <cctype>
 #include <cstdint>
 #include <fstream>
-#include <iostream>
 #include <map>
 #include <memory>
 #include <sstream>
 #include <string>
 #include <unordered_set>
 #include <vector>
-#include <set>
 
 namespace a2lfile
 {
@@ -100,11 +97,6 @@ inline bool isDecimal(std::string& str)
     return str.find_first_not_of(decimalF) == std::string::npos;
 }
 
-inline void printTabs(int count, std::ostream& o = std::cout)
-{
-    for (auto tabs = 0; tabs < count; tabs++) o << "    ";
-}
-
 inline bool shouldSkipShortOrWpLine(std::string& line)
 {
     return (line.find_first_not_of(wpF) == std::string::npos) || (line.length() < 2);
@@ -124,13 +116,6 @@ struct LineItem
         Float,  /* MCD */
         Identifier /* MCD -  not quoted text - ie Keywords */
     };
-
-    static std::string itemTypeToTxt(Type t)
-    {
-        const std::array<std::string, Identifier + 1> typeNames =
-            {"Invalid", "String", "Decimal", "Hex", "Float", "Identifier"};
-        return typeNames[static_cast<int>(t)];
-    }
 
     LineItem(Type type, std::string txt, LineItem* next=nullptr)
     {
@@ -221,45 +206,6 @@ struct LineItem
         }
     }
 
-    void write(std::ofstream& o)
-    {
-        if (_type == String)
-        {
-            o << "\"" << _txt << "\"";
-        }
-        else
-        {
-            o << _txt;
-        }
-    }
-
-    void print(std::ostream& o = std::cout)
-    {
-        o << _txt << "{" << itemTypeToTxt(_type) << "}"
-             << "[";
-        switch (_type)
-        {
-            case String:
-            case Identifier:
-                o << "-";
-                break;
-            case Hex:
-                o << toUnsigned();
-                break;
-            case Decimal:
-                o << toSigned();
-                break;
-            case Float:
-                o << std::stold(_txt);
-                break;
-            default:
-                o << "?";
-                break;
-        }
-        o << "]";
-    }
-
-
     struct Iterator
     {
         Iterator( LineItem* li ) : _li(li)
@@ -267,7 +213,7 @@ struct LineItem
 
         bool isEnd()
         {
-            return ( _li->_next->_type == Invalid );
+            return ( _li->_type == Invalid );
         };
 
         /* prefix ++ */
@@ -314,7 +260,7 @@ struct LineItem
 
 struct Line
 {
-    Line(std::string& line, bool wasOnBlockBegin = false) : wasOnBlockBegin(wasOnBlockBegin)
+    Line(std::string& line)
     {
         size_t startPos, endPos = 0;
 
@@ -367,30 +313,6 @@ struct Line
             _line_items.back()->_next = invli(); /* the last item is always linked to the static invalid LineItem */
     }
 
-    void write(std::ofstream& o)
-    {
-        auto pos = _line_items.begin();
-
-        while (pos != _line_items.end())
-        {
-            (*pos)->write(o);
-            ++pos;
-            if (pos != _line_items.end()) o << " ";
-        }
-    }
-
-    void print(std::ostream& o = std::cout)
-    {
-        auto pos = _line_items.begin();
-
-        while (pos != _line_items.end())
-        {
-            (*pos)->print(o);
-            ++pos;
-            if (pos != _line_items.end()) o << " ";
-        }
-    }
-
     static LineItem* invli()
     {
         static LineItem li(LineItem::Invalid, "");
@@ -398,7 +320,6 @@ struct Line
         return &li;
     }
 
-    bool wasOnBlockBegin;
     std::vector<std::unique_ptr<LineItem>> _line_items;
 };
 
@@ -417,38 +338,12 @@ struct Block
         return Line::invli();
     }
 
-    std::vector<LineItem*> lisByTxts(std::set<std::string>& s)
-    {
-        std::vector<LineItem*> lis;
-        for (const auto& li : this->_line_items)
-        {
-            if ( s.find(li->toText() ) != s.end() )
-            {
-                lis.push_back( li );
-            }
-        }
-        return lis;
-    }
-
     std::vector<LineItem*> lisByTxtAndType(std::string name, LineItem::Type type)
     {
         std::vector<LineItem*> ret;
         for (auto& li : this->_line_items)
         {
             if ((li->toText() == name) && (li->_type == type))
-            {
-                ret.push_back(li);
-            }
-        }
-        return ret;
-    }
-
-    std::vector<LineItem*> lisByTxtsAndType( std::set<std::string>& s, LineItem::Type type)
-    {
-        std::vector<LineItem*> ret;
-        for (const auto& li : this->_line_items)
-        {
-            if ( ( s.find(li->toText() ) != s.end() ) && (li->_type == type) )
             {
                 ret.push_back(li);
             }
@@ -507,44 +402,6 @@ struct Block
         return ret;
     }
 
-    void print(int depth = 0, std::ostream& o = std::cout)
-    {
-        printTabs(depth, o);
-        o << _name << "{BLOCK_BEGIN}" << std::endl;
-        for (auto& l : _lines)
-        {
-            printTabs(depth + 1, o);
-            l->print(o);
-            o << std::endl;
-        }
-        for (auto& c : _children)
-        {
-            c->print(depth + 1, o);
-        }
-        printTabs(depth, o);
-        o << _name << "{BLOCK_END}" << std::endl;
-    }
-
-    void write(int depth, std::ofstream& o)
-    {
-        o << "/begin " << _name << " ";
-        for (auto& l : _lines)
-        {
-            if (!l->wasOnBlockBegin)
-            {
-                o << std::endl;
-                printTabs(depth + 1, o);
-            }
-            l->write(o);
-        }
-        o << std::endl;
-        for (auto& c : _children)
-        {
-            c->write(depth + 1, o);
-        }
-        o << "/end " << _name << std::endl << std::endl;
-    }
-
     void parse()
     {
         std::string firstLine;
@@ -566,7 +423,7 @@ struct Block
 
         if (!shouldSkipShortOrWpLine(firstLine))
         {
-            _lines.push_back(std::make_unique<Line>(firstLine, true));
+            _lines.push_back(std::make_unique<Line>(firstLine));
         }
         std::string line;
         while (std::getline(ss, line))
@@ -627,20 +484,6 @@ struct A2lFile
     std::unique_ptr<Line> ASAP2_VERSION;
     std::unique_ptr<Block> PROJECT;
 
-    void print(std::ostream& o = std::cout)
-    {
-        PROJECT->print(0, o);
-    }
-    void write(std::ofstream& o)
-    {
-        PROJECT->write(0, o);
-    }
-
-    struct Version {
-        uint8_t mainVer;
-        uint8_t subVer;
-    };
-
     std::pair<uint8_t, uint8_t> version()
     {
         std::pair<uint8_t,uint8_t> ret;
@@ -653,26 +496,6 @@ struct A2lFile
         ret.second = ASAP2_VERSION->_line_items[2]->toUnsigned();
         return ret;
     };
-};
-
-struct Writer
-{
-    static bool writeA2lFile(std::string path, A2lFile* file)
-    {
-        if (file->PROJECT == nullptr)
-            return false;
-
-        std::ofstream ofile(path);
-        if (!ofile.is_open())
-            return false;
-
-        file->write(ofile);
-        ofile.flush();
-
-        bool ok = ofile.good();
-        ofile.close();
-        return ok;
-    }
 };
 
 struct Loader
