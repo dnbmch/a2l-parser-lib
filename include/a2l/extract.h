@@ -156,6 +156,12 @@ a2l::CcpSyncEdge ccpSyncEdgeFromStr(const std::string& s);
 // Helpers for collecting repeated keyword values
 std::vector<uint32_t> collectRepeatedKeywordUnsigned(a2lfile::Block* block, const std::string& keyword);
 
+// OPTIONAL_TL_SUBCMD maps to transport-specific symbolic code sets (CAN vs
+// Ethernet); the calling transport extractor selects which. Unknown symbols are
+// dropped with a DROPPED diagnostic rather than silently.
+enum class XcpTransport { Can, Ethernet };
+std::vector<uint32_t> collectTlSubcmds(a2lfile::Block* block, XcpTransport transport);
+
 // RecordLayout-specific enums
 a2l::RecordLayoutAxis recordLayoutAxisFromStr(const std::string& s);
 a2l::RecordLayoutAlignmentType recordLayoutAlignmentTypeFromStr(const std::string& s);
