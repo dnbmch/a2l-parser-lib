@@ -153,8 +153,20 @@ a2l::CcpConsistency ccpConsistencyFromStr(const std::string& s);
 a2l::CcpPageMemoryType ccpPageMemoryTypeFromStr(const std::string& s);
 a2l::CcpSyncEdge ccpSyncEdgeFromStr(const std::string& s);
 
-// Helpers for collecting repeated keyword values
+// CCP 2.1 standard command code for a symbolic name (CONNECT=0x01 ... DNLOAD_6=0x23);
+// 0 for an unknown name.
+uint32_t ccpCommandCodeFromStr(const std::string& s);
+
+// Helpers for collecting repeated keyword values (purely-numeric operands:
+// FIXED / RASTER / EVENT).
 std::vector<uint32_t> collectRepeatedKeywordUnsigned(a2lfile::Block* block, const std::string& keyword);
+
+// OPTIONAL_CMD / OPTIONAL_LEVEL1_CMD command lists. A numeric operand is kept
+// verbatim; a symbolic name is resolved against the XCP (resp. CCP) standard
+// command table, and an unknown symbol is DROPPED with a diagnostic rather than
+// silently pushed as 0.
+std::vector<uint32_t> collectXcpCommands(a2lfile::Block* block, const std::string& keyword);
+std::vector<uint32_t> collectCcpCommands(a2lfile::Block* block, const std::string& keyword);
 
 // OPTIONAL_TL_SUBCMD maps to transport-specific symbolic code sets (CAN vs
 // Ethernet); the calling transport extractor selects which. Unknown symbols are
@@ -170,6 +182,15 @@ a2l::RecordLayoutIndexMode recordLayoutIndexModeFromStr(const std::string& s);
 a2l::RecordLayoutDataSize recordLayoutDataSizeFromStr(const std::string& s);
 
 // ===== Block-reading helpers =====
+
+// LineItem-level numeric primitives. A null / Invalid token yields a silent 0;
+// otherwise a central lossy-check (non-numeric token, sto* failure, or a
+// fractional float read into an integer field) records a WARNING, then the
+// value is converted. `location` is the block name; keyword operands append
+// " <keyword>". Every numeric read in the extractors funnels through these.
+uint64_t liUnsigned(a2lfile::LineItem* li, const std::string& location);
+double   liDouble(a2lfile::LineItem* li, const std::string& location);
+int64_t  liSigned(a2lfile::LineItem* li, const std::string& location);
 
 // Get the text of a LineItem at index, or empty string if out of range.
 std::string textAt(a2lfile::Block* block, uint64_t idx);
