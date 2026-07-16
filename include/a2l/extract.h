@@ -21,14 +21,17 @@ namespace a2l::extract {
 a2l::A2lFile extractFile(a2lfile::A2lFile* file);
 
 // ===== Diagnostics accumulator =====
-// Lossy/guessed extraction events are recorded here by the central numeric
-// helpers and record-skip sites, then drained into A2lFile.diagnostics by
-// extractFile(). Losslessly-preserved unknown blocks never emit.
+// Per-thread sink. Lossy/guessed extraction events are recorded here by the
+// central numeric helpers and record-skip sites. extractFile() clears the sink
+// on entry and drains it into A2lFile.diagnostics on return, so each call
+// observes only its own events and concurrent extractions on different threads
+// never interleave. Losslessly-preserved unknown blocks never emit.
 
 void clearDiagnostics();
 void recordDiagnostic(a2l::Severity severity, const std::string& location,
                       const std::string& message);
-const std::vector<a2l::Diagnostic>& takeDiagnostics();
+// Drains: returns the calling thread's accumulated diagnostics and empties the sink.
+std::vector<a2l::Diagnostic> takeDiagnostics();
 
 // ===== Per-concept extraction (module.cpp) =====
 
