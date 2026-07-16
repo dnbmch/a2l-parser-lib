@@ -515,6 +515,7 @@ struct Loader
         Block* currentBlock = nullptr;
 
         uint64_t lineCount = 0;
+        bool inBlockComment = false;
         size_t length; /* could be removed - debug only */
         std::string toAdd;  /* could be removed - debug only */
 
@@ -524,56 +525,45 @@ struct Loader
             size_t pos = 0;
             size_t endPos = 0;
 
-            /* Purge comments on the fly: block comments first, then line comments */
-            if ((pos = line.find(commentBegin)) != std::string::npos)
+            /* Strip comments in a single left-to-right pass. A block comment may
+               span lines (inBlockComment carries across getline) and reduces to
+               one space so it acts as a token separator; a line comment kills the
+               rest of the line. Double-quote parity suppresses comment starts
+               inside a string (no escape handling, per-line reset - matching the
+               tokenizer). */
             {
-                if ((endPos = line.find(commentEnd)) != std::string::npos)
+                std::string stripped;
+                stripped.reserve(line.size());
+                bool inString = false;
+                for (size_t i = 0; i < line.size(); )
                 {
-                    /* single line comment */
-                    length = endPos + commentEnd.length() - pos;
-                    line.erase(pos, length);
-                }
-                else
-                {
-                    /* in multi line comment */
-                    while (std::getline(infile, line))
+                    if (inBlockComment)
                     {
-                        lineCount++;
-                        if ((pos = line.find_first_not_of(wpF)) != std::string::npos)
-                        {
-                            if ((endPos = line.find(commentEnd)) != std::string::npos)
-                            {
-                                /* comment end found */
-                                break;
-                            }
-                            else
-                            {
-                                /* still in multi line comment */
-                                continue;
-                            }
-                        }
+                        size_t e = line.find(commentEnd, i);
+                        if (e == std::string::npos) { break; }
+                        inBlockComment = false;
+                        stripped += ' ';
+                        i = e + commentEnd.length();
                     }
-                    continue;
-                }
-            }
-
-            /* Strip inline // comments (after block comments are handled).
-               Only strip if // is not inside a quoted string. */
-            {
-                size_t lcPos = line.find(lineComment);
-                if (lcPos != std::string::npos)
-                {
-                    size_t quotesBefore = 0;
-                    for (size_t i = 0; i < lcPos; i++)
-                        if (line[i] == '"') quotesBefore++;
-
-                    if (quotesBefore % 2 == 0)
+                    else if (!inString &&
+                             line.compare(i, commentBegin.size(), commentBegin) == 0)
                     {
-                        line.erase(lcPos);
-                        if (line.find_first_not_of(wpF) == std::string::npos)
-                            continue;
+                        inBlockComment = true;
+                        i += commentBegin.length();
+                    }
+                    else if (!inString &&
+                             line.compare(i, lineComment.size(), lineComment) == 0)
+                    {
+                        break; /* rest of line is a comment */
+                    }
+                    else
+                    {
+                        if (line[i] == '"') inString = !inString;
+                        stripped += line[i];
+                        i++;
                     }
                 }
+                line = std::move(stripped);
             }
 
             /* Multi line strings will be merged to a single line for parsing.. */
