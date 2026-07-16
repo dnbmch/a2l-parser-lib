@@ -231,16 +231,6 @@ struct LineItem
             return ret;
         }
 
-        Iterator& operator+= (int rhs)
-        {
-            while( rhs )
-            {
-                _li = _li->_next;
-                rhs--;
-            }
-            return *this;
-        }
-
         LineItem* li() { return _li; }
       private:
         LineItem* _li;
@@ -391,17 +381,6 @@ struct Block
         return ret;
     }
 
-    std::vector<Block*> childBlocksByNames(std::vector<std::string> names)
-    {
-        std::vector<Block*> ret;
-        for (const auto& name : names)
-        {
-            std::vector<Block*> t = childBlocksByName(name);
-            ret.insert(ret.end(), t.begin(), t.end());
-        }
-        return ret;
-    }
-
     void parse()
     {
         std::string firstLine;
@@ -462,10 +441,10 @@ struct Block
     std::multimap<std::string, Block*> _children_lookup;
 
   private:
-    bool parseFirstLineBlkName(std::string& firstLineOfBlock)
+    void parseFirstLineBlkName(std::string& firstLineOfBlock)
     {
         size_t startPos = firstLineOfBlock.find_first_not_of(wpF);
-        if (startPos == std::string::npos) return false;
+        if (startPos == std::string::npos) return;
         size_t endPos = firstLineOfBlock.find_first_of(wpF, startPos);
         if (endPos == std::string::npos)
             endPos = firstLineOfBlock.size() - 1;
@@ -475,7 +454,6 @@ struct Block
         _name = std::string(&firstLineOfBlock[startPos], &firstLineOfBlock[endPos + 1]);
 
         firstLineOfBlock.erase(0, endPos + 1);
-        return true;
     }
 };
 
@@ -516,8 +494,8 @@ struct Loader
 
         uint64_t lineCount = 0;
         bool inBlockComment = false;
-        size_t length; /* could be removed - debug only */
-        std::string toAdd;  /* could be removed - debug only */
+        size_t length;
+        std::string toAdd;
 
         while (std::getline(infile, line))
         {
@@ -649,8 +627,6 @@ struct Loader
                         currentBlock = currentBlock->parent();
 
                         pos += blockEnd.length();
-                        toAdd = line.substr(pos, line.size() - pos);
-                        /* Nothing to add after end */;
                     }
                 }
                 else
