@@ -141,6 +141,9 @@ message CcpTpBlob {
   // Page management.
   repeated CcpDefinedPage defined_pages = 30;
   optional CcpPageSwitchMethod page_switch_method = 31;
+
+  // Catch-all for unsupported child blocks (e.g. CHECKSUM_PARAM).
+  repeated string raw_blocks = 40;
 }
 
 // ===========================================================================
