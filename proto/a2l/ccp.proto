@@ -104,7 +104,8 @@ message IfDataCcp {
   reserved "dp_blob_raw";
   optional string addr_mapping_raw = 23;
 
-  // Catch-all for unsupported vendor extensions.
+  // Catch-all for unsupported vendor extensions. Each entry is a complete
+  // self-identifying "/begin NAME ... /end NAME" fragment.
   repeated string raw_blocks = 30;
 }
 
@@ -142,7 +143,8 @@ message CcpTpBlob {
   repeated CcpDefinedPage defined_pages = 30;
   optional CcpPageSwitchMethod page_switch_method = 31;
 
-  // Catch-all for unsupported child blocks (e.g. CHECKSUM_PARAM).
+  // Catch-all for unsupported child blocks (e.g. CHECKSUM_PARAM). Each entry is
+  // a complete self-identifying "/begin NAME ... /end NAME" fragment.
   repeated string raw_blocks = 40;
 }
 

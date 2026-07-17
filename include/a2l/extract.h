@@ -221,8 +221,15 @@ std::optional<double> optKeywordDouble(a2lfile::Block* block, const std::string&
 // Check if a keyword identifier is present (for boolean-flag keywords like GUARD_RAILS).
 bool hasKeyword(a2lfile::Block* block, const std::string& keyword);
 
-// Collect all raw text content of a block into a single string (for raw fallback).
+// Collect all raw text content of a block into a single string (for raw fallback
+// into a named field, where the schema already carries the block identity).
 std::string blockToRawString(a2lfile::Block* block);
+
+// Same content wrapped in the block's own "/begin NAME ... /end NAME" — a
+// complete, self-identifying, re-parseable fragment. Used for the catch-all
+// raw_blocks/raw_extensions collectors, where the entry itself is the only
+// record of which block was preserved.
+std::string blockToRawNamed(a2lfile::Block* block);
 
 } // namespace a2l::extract
 

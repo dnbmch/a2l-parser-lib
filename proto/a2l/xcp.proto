@@ -178,7 +178,8 @@ message IfDataXcp {
   // Segment/page/checksum (memory-segment-level IF_DATA).
   repeated XcpSegment segments = 40;
 
-  // Raw fallback for unsupported AML-defined or vendor blocks.
+  // Raw fallback for unsupported AML-defined or vendor blocks. Each entry is a
+  // complete self-identifying "/begin NAME ... /end NAME" fragment.
   repeated string raw_blocks = 50;
 }
 
@@ -271,7 +272,8 @@ message XcpDaq {
   // DAQ memory consumption parameters.
   optional XcpDaqMemory daq_memory_consumption = 35;
 
-  // Raw fallback for dynamic-DAQ capability flags and extensions.
+  // Raw fallback for dynamic-DAQ capability flags and extensions. Each entry is
+  // a complete self-identifying "/begin NAME ... /end NAME" fragment.
   repeated string raw_extensions = 40;
 }
 
