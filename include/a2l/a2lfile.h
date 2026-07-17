@@ -625,8 +625,6 @@ struct Loader
                     else
                     {
                         currentBlock = currentBlock->parent();
-
-                        pos += blockEnd.length();
                     }
                 }
                 else

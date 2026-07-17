@@ -186,7 +186,9 @@ a2l::RecordLayoutDataSize recordLayoutDataSizeFromStr(const std::string& s);
 
 // ===== Block-reading helpers =====
 
-// LineItem-level numeric primitives. A null / Invalid token yields a silent 0;
+// LineItem-level numeric primitives. Items come from the parse tree, whose
+// accessors return the static Invalid sentinel for absent tokens — never null.
+// An Invalid token yields a silent 0;
 // otherwise a central lossy-check (non-numeric token, sto* failure, or a
 // fractional float read into an integer field) records a WARNING, then the
 // value is converted. `location` is the block name; keyword operands append
