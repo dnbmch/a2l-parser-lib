@@ -293,12 +293,11 @@ message XcpTimestampSupported {
 // Predefined DAQ list (STATIC configuration).
 message XcpDaqList {
   uint32 daq_list_number = 1;
-  reserved 2;  // was uint32 daq_list_type
-  uint32 max_odt         = 3;
-  uint32 max_odt_entries = 4;
-  optional uint32 first_pid = 5;
-  optional uint32 event_fixed = 6;
-  DaqListType daq_list_type = 7;
+  uint32 max_odt         = 2;
+  uint32 max_odt_entries = 3;
+  optional uint32 first_pid = 4;
+  optional uint32 event_fixed = 5;
+  DaqListType daq_list_type = 6;
 }
 
 // EVENT channel definition.
@@ -308,14 +307,12 @@ message XcpDaqEventChannel {
   string name                  = 1;
   string short_name            = 2;
   uint32 event_channel_number  = 3;
-  reserved 4;  // was uint32 daq_list_type
-  uint32 max_daq_list          = 5;
-  uint32 time_cycle            = 6;
-  uint32 time_unit             = 7;
-  uint32 priority              = 8;
-  reserved 9;  // was uint32 consistency
-  DaqListType    daq_list_type = 10;
-  DaqConsistency consistency   = 11;
+  uint32 max_daq_list          = 4;
+  uint32 time_cycle            = 5;
+  uint32 time_unit             = 6;
+  uint32 priority              = 7;
+  DaqListType    daq_list_type = 8;
+  DaqConsistency consistency   = 9;
 }
 
 // DAQ memory consumption parameters.
