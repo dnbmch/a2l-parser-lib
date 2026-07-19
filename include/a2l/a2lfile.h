@@ -19,7 +19,6 @@
 #include <fstream>
 #include <map>
 #include <memory>
-#include <sstream>
 #include <string>
 #include <unordered_set>
 #include <vector>
@@ -381,22 +380,31 @@ struct Block
         return ret;
     }
 
+    /* Appends one already-comment-stripped source line to the block's scratch
+       text. Only the Loader calls this, and only before parse(). */
+    void addSourceLine(const std::string& line)
+    {
+        _text += line;
+        _text += '\n';
+    }
+
+    /* Consumes _text: tokenizes it into Lines/LineItems (or hands it to
+       _raw_content for blacklisted blocks) and then releases it. After parse()
+       the block retains only tokens and, for blacklisted blocks, raw text --
+       never both. */
     void parse()
     {
-        std::string firstLine;
-        std::getline(ss, firstLine);
+        size_t pos = 0;
+        std::string firstLine = takeLine(pos);
         parseFirstLineBlkName(firstLine);
 
         if ( ignoredBlockNames.find(_name) != ignoredBlockNames.end() )
         {
-            /* Blacklisted block: skip parsing but preserve raw content. */
-            _raw_content = ss.str();
-            ss.clear();
-            /* Still register in parent lookup so childBlockByName works. */
-            if (_parent != nullptr)
-            {
-                _parent->_children_lookup.insert(std::pair<std::string, Block*>(_name, this));
-            }
+            /* Blacklisted block: skip tokenizing, the scratch text becomes the
+               block's raw content verbatim (moved, never copied). */
+            _raw_content = std::move(_text);
+            _raw_content.shrink_to_fit(); /* drop the scratch buffer's growth slack */
+            registerInParent();
             return;
         }
 
@@ -404,17 +412,14 @@ struct Block
         {
             _lines.push_back(std::make_unique<Line>(firstLine));
         }
-        std::string line;
-        while (std::getline(ss, line))
+        while (pos < _text.size())
         {
+            std::string line = takeLine(pos);
             _lines.push_back(std::make_unique<Line>(line));
         }
 
-        /* Register Block in parents map*/
-        if (_parent != nullptr)
-        {
-            _parent->_children_lookup.insert(std::pair<std::string, Block*>(_name, this));
-        }
+        releaseText();
+        registerInParent();
 
         /* Register line elements in a single list */
         LineItem* lastLi = nullptr;
@@ -429,7 +434,6 @@ struct Block
         }
     }
 
-    std::stringstream ss;
     std::string _name;
     std::string _raw_content; // Raw text for blacklisted blocks (e.g. A2ML).
 
@@ -441,6 +445,31 @@ struct Block
     std::multimap<std::string, Block*> _children_lookup;
 
   private:
+    /* Parse-time scratch: the block's own source lines, assembled by the Loader
+       and released at the end of parse(). Not state -- nothing reads it after
+       the block closes. */
+    std::string _text;
+
+    /* Returns the line starting at pos and advances pos past its newline. */
+    std::string takeLine(size_t& pos) const
+    {
+        size_t nl = _text.find('\n', pos);
+        if (nl == std::string::npos) nl = _text.size();
+        std::string line = _text.substr(pos, nl - pos);
+        pos = (nl < _text.size()) ? nl + 1 : nl;
+        return line;
+    }
+
+    void releaseText() { std::string().swap(_text); }
+
+    void registerInParent()
+    {
+        if (_parent != nullptr)
+        {
+            _parent->_children_lookup.insert(std::pair<std::string, Block*>(_name, this));
+        }
+    }
+
     void parseFirstLineBlkName(std::string& firstLineOfBlock)
     {
         size_t startPos = firstLineOfBlock.find_first_not_of(wpF);
@@ -494,8 +523,6 @@ struct Loader
 
         uint64_t lineCount = 0;
         bool inBlockComment = false;
-        size_t length;
-        std::string toAdd;
 
         while (std::getline(infile, line))
         {
@@ -582,8 +609,7 @@ struct Loader
                     mainBlock = std::make_unique<Block>(nullptr);
                     currentBlock = mainBlock.get();
                     pos += blockBegin.length();
-                    currentBlock->ss << line.substr(pos, line.size() - pos)
-                                     << std::endl;
+                    currentBlock->addSourceLine(line.substr(pos, line.size() - pos));
                 }
             }
             else
@@ -599,9 +625,8 @@ struct Loader
                     if ((endPos = line.find(blockEnd)) != std::string::npos)
                     {
                         /* Special case -> Block begin and end in the same line.. */
-                        length = line.length() - pos - (line.length() - endPos);
-                        toAdd = line.substr(pos, length);
-                        currentBlock->ss << toAdd << std::endl;
+                        size_t length = line.length() - pos - (line.length() - endPos);
+                        currentBlock->addSourceLine(line.substr(pos, length));
                         blockDepth--;
                         currentBlock->parse();
                         currentBlock = currentBlock->parent();
@@ -609,8 +634,7 @@ struct Loader
                     else
                     {
                         /* Normal case -> only block begin in this line..  */
-                        toAdd = line.substr(pos, line.size() - pos);
-                        currentBlock->ss << toAdd << std::endl;
+                        currentBlock->addSourceLine(line.substr(pos, line.size() - pos));
                     }
                 }
                 else if ((pos = line.find(blockEnd)) != std::string::npos)
@@ -629,7 +653,7 @@ struct Loader
                 }
                 else
                 {
-                    currentBlock->ss << line << std::endl;
+                    currentBlock->addSourceLine(line);
                 }
             }
         }
