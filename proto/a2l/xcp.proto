@@ -171,6 +171,9 @@ message IfDataXcp {
   repeated XcpOnCan xcp_on_cans     = 20;
   repeated XcpOnIp  xcp_on_tcp_ips  = 21;
   repeated XcpOnIp  xcp_on_udp_ips  = 22;
+  repeated XcpOnUsb xcp_on_usbs     = 23;
+  repeated XcpOnFlx xcp_on_flxs     = 24;
+  repeated XcpOnSxi xcp_on_sxis     = 25;
 
   // Measurement-level DAQ event binding.
   optional XcpDaqEvent daq_event = 30;
@@ -448,6 +451,164 @@ message XcpOnIp {
   optional string           transport_layer_instance = 32;
 
   optional PacketAlignment packet_alignment = 33;
+}
+
+// ===========================================================================
+// XCP_ON_USB - USB transport parameters.
+// Corpus grounding: the XCPplus AML
+// (docs/spec_corpus/raw/xcpplus_v1_5_aml/XCPplus_v1_5.aml) declares the
+// block; field shapes are evidenced by the ASAM XCP 1.5 IF_DATA example
+// (docs/spec_corpus/raw/xcp_v1_5_if_data_example_a2l, XCP_ON_USB section).
+// Token sets whose full AML value ranges are not in the corpus are kept as
+// verbatim token strings (transfer_type, message_packing, alignment,
+// header_format).
+// ===========================================================================
+message XcpUsbEndpoint {
+  // Required ordered fields.
+  uint32 endpoint_number  = 1;
+  string transfer_type    = 2;  // e.g. BULK_TRANSFER / INTERRUPT_TRANSFER
+  uint32 max_packet_size  = 3;
+  uint32 polling_interval = 4;
+  string message_packing  = 5;  // e.g. MESSAGE_PACKING_SINGLE / _MULTIPLE / _STREAMING
+  string alignment        = 6;  // e.g. ALIGNMENT_32_BIT
+
+  optional uint32 recommended_host_bufsize = 7;
+}
+
+// DAQ-list-to-endpoint routing.
+message XcpUsbDaqListEndpoint {
+  uint32 daq_list_number = 1;
+
+  oneof endpoint {
+    uint32 fixed_in  = 2;  // FIXED_IN  <endpoint number>
+    uint32 fixed_out = 3;  // FIXED_OUT <endpoint number>
+  }
+}
+
+message XcpOnUsb {
+  // Required ordered fields.
+  uint32 transport_version    = 1;
+  uint32 vendor_id            = 2;
+  uint32 product_id           = 3;
+  uint32 number_of_interfaces = 4;
+  string header_format        = 5;  // e.g. HEADER_LEN_FILL_WORD
+
+  // Endpoint blocks.
+  optional XcpUsbEndpoint out_ep_cmd_stim         = 10;
+  optional XcpUsbEndpoint in_ep_reserr_daq_evserv = 11;
+  repeated XcpUsbEndpoint out_ep_only_stim        = 12;
+  repeated XcpUsbEndpoint in_ep_only_daq          = 13;
+  repeated XcpUsbEndpoint in_ep_only_evserv       = 14;
+
+  optional uint32 alternate_setting_no        = 20;
+  optional string interface_string_descriptor = 21;
+
+  repeated XcpUsbDaqListEndpoint daq_list_usb_endpoints = 22;
+
+  // Transport-local overrides.
+  optional XcpProtocolLayer protocol_layer = 30;
+  optional XcpDaq           daq            = 31;
+  optional string           transport_layer_instance = 32;
+}
+
+// ===========================================================================
+// XCP_ON_FLX - FlexRay transport parameters.
+// Corpus grounding as for XCP_ON_USB (XCPplus AML block declaration; field
+// shapes from the IF_DATA example's XCP_ON_FLX section).
+// ===========================================================================
+
+// FIXED / VARIABLE buffer parameter. FIXED carries its operand; VARIABLE may
+// carry a length operand or an INITIAL_VALUE. CHANNEL carries "A" / "B".
+message XcpFlxParam {
+  bool variable = 1;  // false = FIXED
+
+  optional uint64 value   = 2;  // FIXED operand / VARIABLE length / INITIAL_VALUE
+  optional string channel = 3;  // CHANNEL operand
+}
+
+message XcpFlxLpduId {
+  optional XcpFlxParam flx_slot_id      = 1;
+  optional XcpFlxParam offset           = 2;
+  optional XcpFlxParam cycle_repetition = 3;
+  optional XcpFlxParam channel          = 4;
+}
+
+// Buffer assignment per XCP packet type; tokens kept verbatim
+// (FIXED / VARIABLE / VARIABLE_INITIALISED / NOT_ALLOWED), empty = absent.
+message XcpFlxPacket {
+  string cmd       = 1;
+  string res_err   = 2;
+  string ev_serv   = 3;
+  string daq       = 4;
+  string stim      = 5;
+  string multicast = 6;
+}
+
+message XcpFlxBuffer {
+  // Required ordered field: buffer id.
+  uint32 flx_buf = 1;
+
+  optional XcpFlxParam  max_flx_len_buf = 2;
+  optional XcpFlxLpduId lpdu_id         = 3;
+  optional XcpFlxPacket xcp_packet      = 4;
+}
+
+message XcpOnFlx {
+  // Required ordered fields.
+  uint32 transport_version = 1;
+  uint32 t1_ms             = 2;
+  string fibex_file        = 3;  // FIBEX file including CHI information
+  string cluster_id        = 4;
+  uint32 nax               = 5;  // node address for XCP
+  string header_format     = 6;  // e.g. HEADER_NAX_CTR_LEN
+
+  optional PacketAlignment packet_alignment = 7;  // PACKET_ALIGNMENT_8/16/32 token
+
+  // Buffer blocks.
+  repeated XcpFlxBuffer initial_cmd_buffers     = 10;
+  repeated XcpFlxBuffer initial_res_err_buffers = 11;
+  repeated XcpFlxBuffer pool_buffers            = 12;
+
+  // FlexRay transport-layer subcommand names (e.g. FLX_ASSIGN); the corpus
+  // has no FlexRay code table, so symbols are kept verbatim.
+  repeated string optional_tl_subcmds = 20;
+
+  // Transport-local overrides.
+  optional XcpProtocolLayer protocol_layer = 30;
+  optional XcpDaq           daq            = 31;
+  optional string           transport_layer_instance = 32;
+}
+
+// ===========================================================================
+// XCP_ON_SxI - serial (SPI / SCI) transport parameters.
+// Corpus grounding as for XCP_ON_USB (XCPplus AML block declaration; field
+// shapes from the IF_DATA example's XCP_ON_SxI section). Mode tokens kept
+// verbatim.
+// ===========================================================================
+message XcpSxiFraming {
+  uint32 sync = 1;  // SYNC character
+  uint32 esc  = 2;  // ESC character
+}
+
+message XcpOnSxi {
+  // Required ordered fields.
+  uint32 transport_version = 1;
+  uint32 baudrate          = 2;
+
+  // Mode tokens, verbatim (e.g. ASYNCH_FULL_DUPLEX_MODE, PARITY_ODD,
+  // TWO_STOP_BITS, HEADER_LEN_CTR_WORD, NO_CHECKSUM).
+  string duplex_mode        = 3;
+  optional string parity    = 4;
+  optional string stop_bits = 5;
+  string header_format      = 6;
+  string checksum_type      = 7;
+
+  optional XcpSxiFraming framing = 8;
+
+  // Transport-local overrides.
+  optional XcpProtocolLayer protocol_layer = 30;
+  optional XcpDaq           daq            = 31;
+  optional string           transport_layer_instance = 32;
 }
 
 // ===========================================================================

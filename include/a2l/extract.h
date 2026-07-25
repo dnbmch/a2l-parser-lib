@@ -80,6 +80,9 @@ a2l::XcpOnIp extractXcpOnIp(a2lfile::Block* block);
 a2l::XcpCanFd extractXcpCanFd(a2lfile::Block* block);
 a2l::XcpDaqListCanId extractXcpDaqListCanId(a2lfile::Block* block);
 a2l::XcpEventCanIdList extractXcpEventCanIdList(a2lfile::Block* block);
+a2l::XcpOnUsb extractXcpOnUsb(a2lfile::Block* block);
+a2l::XcpOnFlx extractXcpOnFlx(a2lfile::Block* block);
+a2l::XcpOnSxi extractXcpOnSxi(a2lfile::Block* block);
 
 // ===== Per-concept extraction (xcp_segment.cpp) =====
 
