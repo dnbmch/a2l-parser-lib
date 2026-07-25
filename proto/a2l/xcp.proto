@@ -633,8 +633,9 @@ message XcpSegment {
 
 message XcpPage {
   uint32 page_number  = 1;
-  string ecu_access   = 2;  // e.g. "XCP_READ_ACCESS_WITH_ECU_ONLY"
-  string xcp_access   = 3;  // e.g. "XCP_READ_ACCESS_NOT_ALLOWED"
+  string ecu_access   = 2;  // e.g. "ECU_ACCESS_DONT_CARE"
+  string xcp_access   = 3;  // XCP read access, e.g. "XCP_READ_ACCESS_DONT_CARE"
+  string write_access = 5;  // XCP write access, e.g. "XCP_WRITE_ACCESS_NOT_ALLOWED"
   optional bool init_segment = 4;
 }
 
