@@ -105,6 +105,26 @@ message ModPar {
 
   repeated SystemConstant  system_constants = 10;
   repeated MemorySegment   memory_segments  = 11;
+  repeated MemoryLayout    memory_layouts   = 12;
+}
+
+// ===========================================================================
+// MEMORY_LAYOUT - legacy ECU program-segment descriptor (ASAP2 1.7.1
+// section 4.7.100). Superseded by MEMORY_SEGMENT but still valid in
+// parallel with it; present in real production files.
+// Source: docs/spec_corpus/spec_cards/mod_par.md
+//         docs/spec_corpus/raw/mcd2_mc_bs_v1_7_1/pages/page_0167.txt
+// ===========================================================================
+message MemoryLayout {
+  // PRG_CODE / PRG_DATA / PRG_RESERVED map onto the shared MemoryPrgType
+  // CODE / DATA / RESERVED values.
+  MemoryPrgType  prg_type = 1;
+  uint64         address  = 2;
+  uint64         size     = 3;
+  repeated int64 offsets  = 4;  // five offsets (mirrored segments), -1 = unused
+
+  // Layout-level IF_DATA.
+  repeated IfData if_datas = 10;
 }
 
 message SystemConstant {

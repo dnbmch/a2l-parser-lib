@@ -39,6 +39,7 @@ a2l::Module extractModule(a2lfile::Block* block);
 a2l::ModCommon extractModCommon(a2lfile::Block* block);
 a2l::ModPar extractModPar(a2lfile::Block* block);
 a2l::MemorySegment extractMemorySegment(a2lfile::Block* block);
+a2l::MemoryLayout extractMemoryLayout(a2lfile::Block* block);
 a2l::Unit extractUnit(a2lfile::Block* block);
 
 // ===== Per-concept extraction (compu.cpp) =====
@@ -129,6 +130,9 @@ a2l::Monotony monotonyFromStr(const std::string& s);
 a2l::AxisAttribute axisAttributeFromStr(const std::string& s);
 a2l::UnitType unitTypeFromStr(const std::string& s);
 a2l::MemoryPrgType memoryPrgTypeFromStr(const std::string& s);
+// MEMORY_LAYOUT PrgType tokens (PRG_CODE / PRG_DATA / PRG_RESERVED) onto the
+// shared MemoryPrgType CODE / DATA / RESERVED values.
+a2l::MemoryPrgType memoryLayoutPrgTypeFromStr(const std::string& s);
 a2l::MemoryType memoryTypeFromStr(const std::string& s);
 a2l::MemoryAttribute memoryAttributeFromStr(const std::string& s);
 a2l::MatrixLayout matrixLayoutFromStr(const std::string& s);
