@@ -39,7 +39,6 @@ a2l::Module extractModule(a2lfile::Block* block);
 a2l::ModCommon extractModCommon(a2lfile::Block* block);
 a2l::ModPar extractModPar(a2lfile::Block* block);
 a2l::MemorySegment extractMemorySegment(a2lfile::Block* block);
-a2l::SystemConstant extractSystemConstant(a2lfile::Block* block);
 a2l::Unit extractUnit(a2lfile::Block* block);
 
 // ===== Per-concept extraction (compu.cpp) =====
