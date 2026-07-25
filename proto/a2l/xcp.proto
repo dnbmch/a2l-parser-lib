@@ -206,13 +206,11 @@ message XcpProtocolLayer {
   repeated uint32 optional_cmds        = 20;  // command codes
   repeated uint32 optional_level1_cmds = 21;
 
-  reserved 22;  // was uint32 communication_mode_supported
-
-  optional string seed_and_key_external_function = 23;
-  optional uint32 max_dto_stim = 24;
+  optional string seed_and_key_external_function = 22;
+  optional uint32 max_dto_stim = 23;
 
   // COMMUNICATION_MODE_SUPPORTED (BLOCK / INTERLEAVED). Presence via has_*.
-  optional XcpCommunicationModeSupported communication_mode_supported = 25;
+  optional XcpCommunicationModeSupported communication_mode_supported = 24;
 }
 
 // COMMUNICATION_MODE_SUPPORTED body (XCP common AML taggedunion): either BLOCK
@@ -440,7 +438,6 @@ message XcpOnIp {
   // Operational limits.
   optional uint32 max_bus_load   = 20;
   optional uint32 max_bit_rate   = 21;
-  reserved 22;  // was uint32 packet_alignment
 
   // Optional transport-layer sub-commands.
   repeated uint32 optional_tl_subcmds = 25;
