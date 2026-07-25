@@ -176,6 +176,7 @@ message Characteristic {
   optional string    format                   = 15;
   optional string    phys_unit                = 16;
   optional uint32    ecu_address_extension    = 17;
+  optional Encoding  encoding                 = 18;  // ASCII string encoding (V1.7+)
 
   // Characteristic-level IF_DATA.
   repeated IfData if_datas = 30;
@@ -544,6 +545,7 @@ message TypedefCharacteristic {
   optional ExtendedLimits extended_limits = 15;
   optional string         format          = 16;
   optional string         phys_unit       = 17;
+  optional Encoding       encoding        = 18;  // ASCII string encoding (V1.7+)
 }
 
 // ===========================================================================

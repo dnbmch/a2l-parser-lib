@@ -67,6 +67,21 @@ enum CharacteristicType {
 }
 
 // ---------------------------------------------------------------------------
+// String encoding of an adjustable string object (ENCODING keyword, V1.7+).
+// Source: ASAP2 1.7.1 section 4.7.66 (raw corpus
+//         docs/spec_corpus/raw/mcd2_mc_bs_v1_7_1/pages/page_0119.txt);
+//         carried by CHARACTERISTIC (4.7.37) and TYPEDEF_CHARACTERISTIC
+//         (4.7.152) per docs/spec_corpus/tables/mcd2mc/keyword_hierarchy.md.
+// Absent keyword = content is an array of 8-bit characters (spec note).
+// ---------------------------------------------------------------------------
+enum Encoding {
+  ENCODING_UNSPECIFIED = 0;
+  ENCODING_UTF8        = 1;
+  ENCODING_UTF16       = 2;
+  ENCODING_UTF32       = 3;
+}
+
+// ---------------------------------------------------------------------------
 // Conversion type for COMPU_METHOD.
 // Source: docs/spec_corpus/spec_cards/compu_method.md (conversion_type field)
 // ---------------------------------------------------------------------------

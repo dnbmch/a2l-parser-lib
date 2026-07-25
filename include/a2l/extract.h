@@ -122,6 +122,7 @@ a2l::DataType dataTypeFromStr(const std::string& s);
 a2l::ByteOrder byteOrderFromStr(const std::string& s);
 a2l::IndexOrder indexOrderFromStr(const std::string& s);
 a2l::CharacteristicType characteristicTypeFromStr(const std::string& s);
+a2l::Encoding encodingFromStr(const std::string& s);
 a2l::ConversionType conversionTypeFromStr(const std::string& s);
 a2l::DepositMode depositModeFromStr(const std::string& s);
 a2l::Monotony monotonyFromStr(const std::string& s);
