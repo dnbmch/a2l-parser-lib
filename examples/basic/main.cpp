@@ -13,8 +13,8 @@
 #include <iostream>
 #include <string>
 
-#include "a2l/a2lfile.h"
 #include "a2l/extract.h"
+#include "a2l/a2lfile.h"
 
 using namespace std;
 

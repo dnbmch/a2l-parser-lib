@@ -46,7 +46,7 @@ cmake --build build
 
 | Directory | Description |
 |-----------|-------------|
-| `include/` | Public C++ headers (`a2l/a2lfile.h`, `a2l/extract.h`, enum headers) |
+| `include/` | Public raw loader (`a2l/a2lfile.h`) and typed extraction entry point (`a2l/extract.h`) |
 | `proto/` | Protobuf schema files (`.proto`) for multi-language binding generation |
 | `examples/` | Example applications (basic summary, JSON export) |
 
