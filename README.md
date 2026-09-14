@@ -20,9 +20,21 @@ Prebuilt static libraries are available on the [Releases](https://github.com/dnb
 | `a2lparser-x86_64-linux-gnu` | Linux x86_64 (.a) |
 | `a2lparser-aarch64-linux-gnu` | Linux ARM64 (.a) |
 | `a2lparser-x86_64-windows-msvc` | Windows MSVC (.lib) |
-| `a2lparser-headers` | Public headers and proto files |
 
 ## Quick Start
+
+Each platform archive contains a complete install prefix: matching public and
+protobuf-generated headers, the static library, schemas, CMake package files and
+`share/a2lparser/build-info.json`. Set `CMAKE_PREFIX_PATH` to the extracted prefix;
+CMake resolves `a2lparser::a2lparser` through `find_package(a2lparser CONFIG REQUIRED)`.
+Use a compatible compiler/runtime and the producer's exact protobuf version. Dependency
+libraries are supplied separately by your toolchain. Do not regenerate C++ headers
+against a prebuilt binary. Historical split archives do not satisfy this contract;
+choose a complete package from a deliberate future release or a local producer install.
+
+Package CI runs when repository variable `PARSER_PACKAGE_TAG` names an existing
+complete-package release, and supports manual dispatch. No tag is selected by default.
+
 
 ```bash
 # 1. Clone this repo
@@ -30,12 +42,13 @@ git clone https://github.com/dnbmch/a2l-parser-lib.git
 cd a2l-parser-lib
 
 # 2. Download and extract the prebuilt library for your platform
-#    (from the Releases page, extract into lib/)
-mkdir -p lib
-tar xzf a2lparser-x86_64-linux-gnu-v0.4.0.tar.gz -C lib/
+#    (from the Releases page, extract into package/)
+TAG=... # Select an existing complete-package release tag.
+mkdir -p package
+tar xzf a2lparser-x86_64-linux-gnu-${TAG}.tar.gz -C package/
 
 # 3. Build the examples
-cmake -B build -DA2L_LIB_DIR=lib
+cmake -B build -DCMAKE_PREFIX_PATH=/absolute/path/to/package
 cmake --build build
 
 # 4. Run
