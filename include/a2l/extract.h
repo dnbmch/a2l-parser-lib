@@ -10,7 +10,7 @@ struct A2lFile;
 namespace a2l::extract {
 
 // Build a typed document from the caller-owned raw parse tree.
-a2l::A2lFile extractFile(a2lfile::A2lFile* file);
+a2l::A2lFile extractFile(const a2lfile::A2lFile* file);
 
 } // namespace a2l::extract
 

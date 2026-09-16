@@ -13,6 +13,8 @@
 #ifndef A2LFILE_H
 #define A2LFILE_H
 
+#include "a2l/detail/number.h"
+
 #include <algorithm>
 #include <cctype>
 #include <cstdint>
@@ -116,14 +118,14 @@ struct LineItem
         Identifier /* MCD -  not quoted text - ie Keywords */
     };
 
-    LineItem(Type type, std::string txt, LineItem* next=nullptr)
+    LineItem(Type type, std::string txt, const LineItem* next=nullptr)
     {
         _type = type;
         _txt = txt;
-        _next = next;
+        _next = type == Invalid ? this : next;
     }
 
-    std::string toText(bool trimmed = true)
+    std::string toText(bool trimmed = true) const
     {
         if( _type == Invalid )
             return "Invalid!";
@@ -140,77 +142,16 @@ struct LineItem
         }
     };
 
-    uint64_t toUnsigned()
-    {
-        try {
-            switch (_type)
-            {
-                case String:
-                case Identifier:
-                    return 0;
-                case Hex:
-                    return std::stoull(_txt, nullptr, 16);
-                case Decimal:
-                    return std::stoull(_txt, nullptr, 10);
-                case Float:
-                    return this->toDouble();
-                default: /* Invalid */
-                    return 0;
-            }
-        } catch (...) {
-            return 0;
-        }
-    };
-
-    int64_t toSigned()
-    {
-        try {
-            switch (_type)
-            {
-                case String:
-                case Identifier:
-                    return 0;
-                case Hex:
-                    return std::stoll(_txt, nullptr, 16);
-                case Decimal:
-                    return std::stoll(_txt, nullptr, 10);
-                case Float:
-                    return this->toDouble();
-                default: /* Invalid */
-                    return 0;
-            }
-        } catch (...) {
-            return 0;
-        }
-    }
-
-    double toDouble()
-    {
-        try {
-            switch (_type)
-            {
-                case String:
-                case Identifier:
-                    return 0.0;
-                case Hex:
-                    return toUnsigned();
-                case Decimal:
-                case Float:
-                    return std::stod(_txt);
-                default: /* Invalid */
-                    return 0.0;
-            }
-        } catch (...) {
-            return 0.0;
-        }
-    }
+    uint64_t toUnsigned() const { return detail::readNumber<uint64_t>(*this).value; }
+    int64_t toSigned() const { return detail::readNumber<int64_t>(*this).value; }
+    double toDouble() const { return detail::readNumber<double>(*this).value; }
 
     struct Iterator
     {
-        Iterator( LineItem* li ) : _li(li)
+        Iterator( const LineItem* li ) : _li(li)
         {};
 
-        bool isEnd()
+        bool isEnd() const
         {
             return ( _li->_type == Invalid );
         };
@@ -230,19 +171,19 @@ struct LineItem
             return ret;
         }
 
-        LineItem* li() { return _li; }
+        const LineItem* li() const { return _li; }
       private:
-        LineItem* _li;
+        const LineItem* _li;
     };
 
-    LineItem* next() { return _next; };
-    Type type() { return _type; };
+    const LineItem* next() const { return _next; };
+    Type type() const { return _type; };
 
   private:
     friend Line;
     friend Block;
 
-    LineItem* _next;
+    const LineItem* _next;
     Type _type;
     std::string _txt;
 };
@@ -302,10 +243,9 @@ struct Line
             _line_items.back()->_next = invli(); /* the last item is always linked to the static invalid LineItem */
     }
 
-    static LineItem* invli()
+    static const LineItem* invli()
     {
-        static LineItem li(LineItem::Invalid, "");
-        li._next = &li;
+        static const LineItem li(LineItem::Invalid, "");
         return &li;
     }
 
@@ -318,18 +258,18 @@ struct Block
 
     void addChild(std::unique_ptr<Block> b) { _children.push_back(std::move(b)); }
 
-    Block* parent() { return _parent; }
+    const Block* parent() const { return _parent; }
 
-    LineItem* liByIdx(uint64_t idx)
+    const LineItem* liByIdx(uint64_t idx) const
     {
         if (idx < _line_items.size())
             return _line_items.at(idx);
         return Line::invli();
     }
 
-    std::vector<LineItem*> lisByTxtAndType(std::string name, LineItem::Type type)
+    std::vector<const LineItem*> lisByTxtAndType(std::string name, LineItem::Type type) const
     {
-        std::vector<LineItem*> ret;
+        std::vector<const LineItem*> ret;
         for (auto& li : this->_line_items)
         {
             if ((li->toText() == name) && (li->_type == type))
@@ -340,7 +280,7 @@ struct Block
         return ret;
     }
 
-    LineItem* liByIdent(std::string name)
+    const LineItem* liByIdent(std::string name) const
     {
         for (auto& li : this->_line_items)
         {
@@ -353,26 +293,26 @@ struct Block
     }
 
     /* Returns the next item (right) to the line item with the name */
-    LineItem* liByIdentNxt(std::string name)
+    const LineItem* liByIdentNxt(std::string name) const
     {
-        LineItem* li = liByIdent(name);
+        const LineItem* li = liByIdent(name);
         return li->_next;
     }
 
-    LineItem* firstLineItem()
+    const LineItem* firstLineItem() const
     {
         return (this->_line_items.size() ) ? this->_line_items.at(0) : Line::invli();
     }
 
-    Block* childBlockByName(std::string name)
+    const Block* childBlockByName(std::string name) const
     {
         const auto itr = _children_lookup.find(name);
         return (itr != _children_lookup.end()) ? itr->second : nullptr;
     }
 
-    std::vector<Block*> childBlocksByName(std::string name)
+    std::vector<const Block*> childBlocksByName(std::string name) const
     {
-        std::vector<Block*> ret;
+        std::vector<const Block*> ret;
         for (auto [itr, rangeEnd] = _children_lookup.equal_range(name); itr != rangeEnd; ++itr)
         {
             ret.push_back(itr->second);
@@ -441,7 +381,7 @@ struct Block
     std::vector<std::unique_ptr<Block>> _children;
     std::vector<std::unique_ptr<Line>> _lines;
 
-    std::vector<LineItem*> _line_items;
+    std::vector<const LineItem*> _line_items;
     std::multimap<std::string, Block*> _children_lookup;
 
   private:
@@ -491,16 +431,16 @@ struct A2lFile
     std::unique_ptr<Line> ASAP2_VERSION;
     std::unique_ptr<Block> PROJECT;
 
-    std::pair<uint8_t, uint8_t> version()
+    std::pair<uint32_t, uint32_t> version() const
     {
-        std::pair<uint8_t,uint8_t> ret;
+        std::pair<uint32_t, uint32_t> ret;
         if( ASAP2_VERSION == nullptr )
             return ret;
         if( ASAP2_VERSION->_line_items.size() != 3 )
             return ret;
 
-        ret.first = ASAP2_VERSION->_line_items[1]->toUnsigned();
-        ret.second = ASAP2_VERSION->_line_items[2]->toUnsigned();
+        ret.first = detail::readNumber<uint32_t>(*ASAP2_VERSION->_line_items[1]).value;
+        ret.second = detail::readNumber<uint32_t>(*ASAP2_VERSION->_line_items[2]).value;
         return ret;
     };
 };
@@ -521,12 +461,10 @@ struct Loader
         std::unique_ptr<Block> mainBlock;
         Block* currentBlock = nullptr;
 
-        uint64_t lineCount = 0;
         bool inBlockComment = false;
 
         while (std::getline(infile, line))
         {
-            lineCount++;
             size_t pos = 0;
             size_t endPos = 0;
 
@@ -580,7 +518,6 @@ struct Loader
                     std::string t;
                     if (std::getline(infile, t))
                     {
-                        lineCount++;
                         line += t;
                     }
                     else
@@ -629,7 +566,7 @@ struct Loader
                         currentBlock->addSourceLine(line.substr(pos, length));
                         blockDepth--;
                         currentBlock->parse();
-                        currentBlock = currentBlock->parent();
+                        currentBlock = currentBlock->_parent;
                     }
                     else
                     {
@@ -648,7 +585,7 @@ struct Loader
                     }
                     else
                     {
-                        currentBlock = currentBlock->parent();
+                        currentBlock = currentBlock->_parent;
                     }
                 }
                 else
