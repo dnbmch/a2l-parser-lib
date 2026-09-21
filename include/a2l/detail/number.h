@@ -25,8 +25,7 @@ NumberRead<T> readNumber(const Item& item) {
     const auto type = item.type();
     if (type == Item::Invalid) return {0, NumberOutcome::Exact};
     if (type == Item::String || type == Item::Identifier) return {};
-    const auto text = item.toText(false);
-    std::string_view token(text);
+    std::string_view token(item.toText());
     if (token.empty()) return {};
     bool negative = token.front() == '-';
     if (token.front() == '+' || negative) token.remove_prefix(1);
