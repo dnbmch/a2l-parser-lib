@@ -10,7 +10,7 @@
 
 namespace a2lfile::detail {
 
-enum class NumberOutcome { Exact, Defaulted, Truncated };
+enum class NumberOutcome { Exact, Defaulted, Truncated, Missing };
 
 template<class T> struct NumberRead {
     T value{};
@@ -20,10 +20,11 @@ template<class T> struct NumberRead {
 // Shared conversion core for the standalone raw loader and typed extraction.
 // Every successful parse consumes the whole token. Integer spellings retain all
 // 64 bits; floating-to-integer casts occur only inside exact power-of-two bounds.
+// An absent token carries Missing with value zero; it is not an exact written zero.
 template<class T, class Item>
 NumberRead<T> readNumber(const Item& item) {
     const auto type = item.type();
-    if (type == Item::Invalid) return {0, NumberOutcome::Exact};
+    if (type == Item::Invalid) return {0, NumberOutcome::Missing};
     if (type == Item::String || type == Item::Identifier) return {};
     std::string_view token(item.toText());
     if (token.empty()) return {};
