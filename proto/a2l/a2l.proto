@@ -54,6 +54,7 @@ message Module {
   repeated RecordLayout     record_layouts      = 16;
   repeated Unit             units               = 17;
   repeated AxisPts          axis_points         = 18;
+  repeated Blob             blobs               = 19;
 
   // Module-level IF_DATA payloads.
   repeated IfData if_datas = 20;
@@ -61,12 +62,17 @@ message Module {
   // Functional organization.
   repeated Function          functions           = 25;
   repeated Group             groups              = 26;
+  repeated Frame             frames              = 27;
+  repeated Transformer       transformers        = 28;
+  repeated UserRights        user_rights         = 29;
 
   // Type definitions (V1.7+).
   repeated TypedefCharacteristic typedef_characteristics = 30;
   repeated TypedefStructure      typedef_structures      = 31;
   repeated TypedefAxis           typedef_axes            = 32;
   repeated Instance              instances               = 33;
+  repeated TypedefMeasurement    typedef_measurements    = 34;
+  repeated TypedefBlob           typedef_blobs           = 36;
 
   // Variant coding.
   optional VariantCoding variant_coding = 35;
@@ -267,7 +273,9 @@ message CompuMethod {
   optional string formula_raw = 20;
 }
 
-// RAT_FUNC coefficients: phys = f(int) = (a*x^2 + b*x + c) / (d*x^2 + e*x + f)
+// RAT_FUNC coefficients, from the physical to the internal value:
+// INT = f(PHYS) = (a*x^2 + b*x + c) / (d*x^2 + e*x + f), x = PHYS
+// (ASAP2 1.7.1 section 4.7.38). LINEAR runs the other way.
 message Coeffs {
   double a = 1;
   double b = 2;
@@ -423,6 +431,29 @@ message AxisPts {
 }
 
 // ===========================================================================
+// BLOB - an array of bytes with no conversion or record layout (V1.7+).
+// Source: ASAP2 1.7.1 section 4.7.31
+//         (docs/spec_corpus/raw/mcd2_mc_bs_v1_7_1/document.txt)
+// ===========================================================================
+message Blob {
+  string name            = 1;
+  string long_identifier = 2;
+  uint64 address         = 3;
+  uint64 size            = 4;  // bytes
+
+  optional RecordLayoutAddressType address_type          = 10;  // absent: DIRECT
+  repeated Annotation              annotations           = 11;
+  optional CalibrationAccess       calibration_access    = 12;
+  optional string                  display_identifier    = 13;
+  optional uint32                  ecu_address_extension = 14;
+  optional MaxRefresh              max_refresh           = 15;
+  optional string                  model_link            = 16;
+  optional SymbolLink              symbol_link           = 17;
+
+  repeated IfData if_datas = 20;
+}
+
+// ===========================================================================
 // IF_DATA - protocol interface data container.
 // Routes to typed XCP, typed CCP, or raw fallback.
 // Source: docs/spec_corpus/spec_cards/if_data_xcp.md
@@ -536,6 +567,55 @@ message Group {
 }
 
 // ===========================================================================
+// FRAME - a function frame of measurements and its refresh rate.
+// Source: ASAP2 1.7.1 sections 4.7.78-79
+// ===========================================================================
+message Frame {
+  string name            = 1;
+  string long_identifier = 2;
+  uint32 scaling_unit    = 3;  // Appendix C code; the unit of rate
+  uint32 rate            = 4;
+
+  repeated string frame_measurements = 5;  // FRAME_MEASUREMENT: MEASUREMENT refs
+
+  repeated IfData if_datas = 10;
+}
+
+// ===========================================================================
+// TRANSFORMER - an external transformation between calibration objects.
+// Source: ASAP2 1.7.1 sections 4.7.147-149
+// ===========================================================================
+enum TransformerTrigger {
+  TRANSFORMER_TRIGGER_UNSPECIFIED     = 0;
+  TRANSFORMER_TRIGGER_ON_CHANGE       = 1;
+  TRANSFORMER_TRIGGER_ON_USER_REQUEST = 2;
+}
+
+message Transformer {
+  string             name                = 1;
+  string             version             = 2;
+  string             executable32        = 3;  // DLL file name; empty: none
+  string             executable64        = 4;  // DLL file name; empty: none
+  uint32             timeout_ms          = 5;  // 0: not specified
+  TransformerTrigger trigger             = 6;
+  string             inverse_transformer = 7;  // or NO_INVERSE_TRANSFORMER
+
+  repeated string in_objects  = 10;  // TRANSFORMER_IN_OBJECTS
+  repeated string out_objects = 11;  // TRANSFORMER_OUT_OBJECTS
+}
+
+// ===========================================================================
+// USER_RIGHTS - the groups a user level may see.
+// Source: ASAP2 1.7.1 section 4.7.158
+// ===========================================================================
+message UserRights {
+  string user_level_id = 1;
+
+  optional bool   read_only  = 2;  // READ_ONLY: the groups' characteristics are not tunable
+  repeated string ref_groups = 3;  // REF_GROUP
+}
+
+// ===========================================================================
 // Annotation - documentation attached to objects.
 // Source: ASAM MCD-2 MC V1.7.1 Section 5.3.2
 // ===========================================================================
@@ -610,6 +690,44 @@ message TypedefAxis {
   optional ExtendedLimits  extended_limits = 13;
   optional string          format      = 14;
   optional string          phys_unit   = 15;
+}
+
+// ===========================================================================
+// TYPEDEF_MEASUREMENT - reusable measurement type definition (V1.7+).
+// Source: ASAP2 1.7.1 section 4.7.153
+// ===========================================================================
+message TypedefMeasurement {
+  string   name            = 1;
+  string   long_identifier = 2;
+  DataType datatype        = 3;
+  string   conversion      = 4;  // COMPU_METHOD reference (or "NO_COMPU_METHOD")
+  uint32   resolution      = 5;
+  double   accuracy        = 6;
+  double   lower_limit     = 7;
+  double   upper_limit     = 8;
+
+  optional RecordLayoutAddressType address_type  = 10;
+  optional uint64                  bit_mask      = 11;
+  optional BitOperation            bit_operation = 12;
+  optional ByteOrder               byte_order    = 13;
+  optional bool                    discrete      = 14;
+  optional uint64                  error_mask    = 15;
+  optional string                  format        = 16;
+  optional MatrixLayout            layout        = 17;
+  repeated uint32                  matrix_dim    = 18;
+  optional string                  phys_unit     = 19;
+}
+
+// ===========================================================================
+// TYPEDEF_BLOB - reusable blob type definition (V1.7+).
+// Source: ASAP2 1.7.1 section 4.7.151
+// ===========================================================================
+message TypedefBlob {
+  string name            = 1;
+  string long_identifier = 2;
+  uint64 size            = 3;  // bytes
+
+  optional RecordLayoutAddressType address_type = 10;  // absent: DIRECT
 }
 
 // ===========================================================================

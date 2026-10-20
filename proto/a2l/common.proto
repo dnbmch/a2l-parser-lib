@@ -1,5 +1,6 @@
 // Phase-1 shared enums for live XCP signal interpretation.
-// Hand-authored from ASAM MCD-2 MC V1.7.1 spec corpus.
+// Hand-authored from ASAM MCD-2 MC V1.7.1 spec corpus. Each enum value is its
+// A2L keyword after the enum's prefix (CHARACTERISTIC_TYPE_MAP is MAP).
 //
 // Copyright: Balint Kurucz - Danube Mechatronics Kft.
 // License: Dual (GPL or Commercial) - see License.md
@@ -28,14 +29,16 @@ enum DataType {
 }
 
 // ---------------------------------------------------------------------------
-// Byte-order enum.
+// Byte-order enum. The legacy keywords LITTLE_ENDIAN and BIG_ENDIAN name the
+// opposite of their everyday meaning: LITTLE_ENDIAN is MSB_FIRST and
+// BIG_ENDIAN is MSB_LAST (ASAP2 1.7.1 section 4.7.32).
 // Source: docs/spec_corpus/tables/mcd2mc/predefined_data_types.md (byteorder)
 //         docs/spec_corpus/tables/mcd2mc/byte_order_layout.md
 // ---------------------------------------------------------------------------
 enum ByteOrder {
-  BYTE_ORDER_UNSPECIFIED      = 0;
-  BYTE_ORDER_LITTLE_ENDIAN    = 1;  // MSB_LAST / Intel
-  BYTE_ORDER_BIG_ENDIAN       = 2;  // MSB_FIRST / Motorola
+  BYTE_ORDER_UNSPECIFIED         = 0;
+  BYTE_ORDER_MSB_LAST            = 1;  // Intel
+  BYTE_ORDER_MSB_FIRST           = 2;  // Motorola
   BYTE_ORDER_MSB_FIRST_MSW_LAST  = 3;
   BYTE_ORDER_MSB_LAST_MSW_FIRST  = 4;
 }
@@ -46,8 +49,8 @@ enum ByteOrder {
 // ---------------------------------------------------------------------------
 enum IndexOrder {
   INDEX_ORDER_UNSPECIFIED = 0;
-  INDEX_ORDER_INCR        = 1;
-  INDEX_ORDER_DECR        = 2;
+  INDEX_ORDER_INDEX_INCR  = 1;
+  INDEX_ORDER_INDEX_DECR  = 2;
 }
 
 // ---------------------------------------------------------------------------
@@ -193,7 +196,7 @@ enum MemoryAttribute {
 enum MatrixLayout {
   MATRIX_LAYOUT_UNSPECIFIED = 0;
   MATRIX_LAYOUT_ROW_DIR     = 1;
-  MATRIX_LAYOUT_COL_DIR     = 2;
+  MATRIX_LAYOUT_COLUMN_DIR  = 2;
 }
 
 // ---------------------------------------------------------------------------
